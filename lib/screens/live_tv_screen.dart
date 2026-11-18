@@ -258,20 +258,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
       await controller.setLooping(true);
 
-      if (!useFallbackUrl && channel.initialSeekSeconds > 0) {
-        final int totalSec = controller.value.duration.inSeconds;
-        if (totalSec > channel.initialSeekSeconds + 2) {
-          await controller.seekTo(
-            Duration(seconds: channel.initialSeekSeconds),
-          );
-        }
-      }
-
-      if (!mounted || gen != _loadGeneration) {
-        await controller.dispose();
-        return;
-      }
-
       bool startMuted = !_userUnmutedSession || _isMuted;
       if (!startMuted) {
         try {
@@ -285,6 +271,15 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       if (startMuted) {
         await controller.setVolume(0.0);
         await controller.play();
+      }
+
+      if (!useFallbackUrl && channel.initialSeekSeconds > 0) {
+        final int totalSec = controller.value.duration.inSeconds;
+        if (totalSec > channel.initialSeekSeconds + 2) {
+          unawaited(
+            controller.seekTo(Duration(seconds: channel.initialSeekSeconds)),
+          );
+        }
       }
 
       if (!mounted || gen != _loadGeneration) {
@@ -1438,10 +1433,13 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                               isFullscreen: isFullscreen,
                               wideHud: wideHud,
                             ),
-                            _buildHudCenterControls(
-                              stageContext,
-                              wideHud: wideHud,
-                            ),
+                            if (_isVideoInitialized && !_isLoadingStream && !_hasStreamError)
+                              _buildHudCenterControls(
+                                stageContext,
+                                wideHud: wideHud,
+                              )
+                            else
+                              const SizedBox.shrink(),
                             _buildHudBottomBar(
                               stageContext,
                               isFullscreen: isFullscreen,
