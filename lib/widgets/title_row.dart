@@ -1,4 +1,4 @@
-﻿import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
@@ -9,6 +9,9 @@ import '../theme/app_theme.dart';
 import '../util/i18n.dart';
 import 'title_card.dart';
 
+// ─────────────────────────────────────────────
+//  TitleRow — Horizontal content row with header
+// ─────────────────────────────────────────────
 class TitleRow extends StatelessWidget {
   final Collection collection;
   final double cardWidth;
@@ -25,13 +28,13 @@ class TitleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use featured layout for "Continue Watching" or "Critics Corner"
-    final isFeatured = collection.id == 'critics' || collection.id == 'trending';
+    final isFeatured =
+        collection.id == 'critics' || collection.id == 'trending';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // â”€â”€â”€ Section Header â”€â”€â”€
+        // ── Section Header ──
         Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 12, 12),
           child: Row(
@@ -56,12 +59,7 @@ class TitleRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   tr(context, collection.title),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.2,
-                  ),
+                  style: AppTextStyles.sectionTitle.copyWith(fontSize: 17),
                 ),
               ),
               if (showMore)
@@ -76,7 +74,8 @@ class TitleRow extends StatelessWidget {
                     ),
                   ),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -91,7 +90,8 @@ class TitleRow extends StatelessWidget {
                         Text(
                           AppLocalizations.of(context).actionSeeAll,
                           style: TextStyle(
-                            color: AppColors.primary.withValues(alpha: 0.9),
+                            color:
+                                AppColors.primary.withValues(alpha: 0.9),
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
@@ -100,7 +100,8 @@ class TitleRow extends StatelessWidget {
                         Icon(
                           Icons.arrow_forward_ios_rounded,
                           size: 10,
-                          color: AppColors.primary.withValues(alpha: 0.9),
+                          color:
+                              AppColors.primary.withValues(alpha: 0.9),
                         ),
                       ],
                     ),
@@ -110,7 +111,7 @@ class TitleRow extends StatelessWidget {
           ),
         ),
 
-        // â”€â”€â”€ Content Row â”€â”€â”€
+        // ── Content Row ──
         if (isFeatured)
           _buildFeaturedRow(context)
         else if (showIndex)
@@ -121,7 +122,7 @@ class TitleRow extends StatelessWidget {
     );
   }
 
-  /// Standard horizontal card row
+  // ── Standard horizontal card row ──
   Widget _buildStandardRow(BuildContext context) {
     return SizedBox(
       height: cardWidth * 1.5 + 38,
@@ -137,7 +138,7 @@ class TitleRow extends StatelessWidget {
     );
   }
 
-  /// Featured landscape cards row (wider, with backdrop images)
+  // ── Featured landscape cards row ──
   Widget _buildFeaturedRow(BuildContext context) {
     return SizedBox(
       height: 180,
@@ -154,7 +155,7 @@ class TitleRow extends StatelessWidget {
     );
   }
 
-  /// Top 10 ranked row with dramatic numbers
+  // ── Top 10 ranked row ──
   Widget _buildRankedRow(BuildContext context) {
     return SizedBox(
       height: cardWidth * 1.5 + 38,
@@ -175,7 +176,9 @@ class TitleRow extends StatelessWidget {
   }
 }
 
-/// Featured landscape card with backdrop image
+// ─────────────────────────────────────────────
+//  _FeaturedCard — Landscape card with backdrop
+// ─────────────────────────────────────────────
 class _FeaturedCard extends StatefulWidget {
   final TitleItem item;
   const _FeaturedCard({required this.item});
@@ -206,11 +209,11 @@ class _FeaturedCardState extends State<_FeaturedCard> {
           width: 280,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
+                color: Color(0x80000000),
                 blurRadius: 14,
-                offset: const Offset(0, 6),
+                offset: Offset(0, 6),
               ),
             ],
           ),
@@ -219,47 +222,53 @@ class _FeaturedCardState extends State<_FeaturedCard> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Backdrop image
+                // ── Backdrop image ──
                 CachedNetworkImage(
                   imageUrl: widget.item.backdrop,
                   fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(color: AppColors.surfaceAlt),
-                  errorWidget: (_, __, ___) => Container(color: AppColors.surfaceAlt),
+                  placeholder: (_, __) =>
+                      const ColoredBox(color: AppColors.surfaceAlt),
+                  errorWidget: (_, __, ___) =>
+                      const ColoredBox(color: AppColors.surfaceAlt),
                 ),
-                // Dark overlay
+
+                // ── Dark overlay ──
                 Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      stops: const [0.0, 0.4, 0.7, 1.0],
+                      stops: [0.0, 0.4, 0.7, 1.0],
                       colors: [
                         Colors.transparent,
                         Colors.transparent,
-                        Colors.black.withValues(alpha: 0.6),
-                        Colors.black.withValues(alpha: 0.9),
+                        Color(0x99000000), // 60%
+                        Color(0xE6000000), // 90%
                       ],
                     ),
                   ),
                 ),
-                // Rating badge top-left
+
+                // ── Rating badge (top-left) ──
                 Positioned(
                   top: 10,
                   left: 10,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
+                      color: const Color(0x99000000), // 60%
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: const Color(0x1AFFFFFF),
                         width: 0.5,
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.star_rounded, color: AppColors.accent, size: 14),
+                        const Icon(Icons.star_rounded,
+                            color: AppColors.accent, size: 14),
                         const SizedBox(width: 3),
                         Text(
                           widget.item.rating.toStringAsFixed(1),
@@ -273,7 +282,8 @@ class _FeaturedCardState extends State<_FeaturedCard> {
                     ),
                   ),
                 ),
-                // Play button overlay
+
+                // ── Play button overlay ──
                 Positioned(
                   top: 10,
                   right: 10,
@@ -285,7 +295,8 @@ class _FeaturedCardState extends State<_FeaturedCard> {
                       color: AppColors.primary.withValues(alpha: 0.85),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
+                          color:
+                              AppColors.primary.withValues(alpha: 0.4),
                           blurRadius: 10,
                         ),
                       ],
@@ -297,7 +308,8 @@ class _FeaturedCardState extends State<_FeaturedCard> {
                     ),
                   ),
                 ),
-                // Title & info at bottom
+
+                // ── Title & info at bottom ──
                 Positioned(
                   left: 12,
                   right: 12,
@@ -321,28 +333,29 @@ class _FeaturedCardState extends State<_FeaturedCard> {
                         children: [
                           Text(
                             '${widget.item.year}',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
+                            style: const TextStyle(
+                              color: Color(0x99FFFFFF), // 60%
                               fontSize: 11.5,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 6),
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 6),
                             width: 3,
                             height: 3,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               color: AppColors.primary,
                               shape: BoxShape.circle,
                             ),
                           ),
                           Expanded(
                             child: Text(
-                              widget.item.genres.join(' â€¢ '),
+                              widget.item.genres.join(' • '),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
+                              style: const TextStyle(
+                                color: Color(0x80FFFFFF), // 50%
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -362,7 +375,9 @@ class _FeaturedCardState extends State<_FeaturedCard> {
   }
 }
 
-/// Ranked card with dramatic gradient number
+// ─────────────────────────────────────────────
+//  _RankedCard — Dramatic gradient number
+// ─────────────────────────────────────────────
 class _RankedCard extends StatelessWidget {
   final int index;
   final TitleItem item;
@@ -398,7 +413,7 @@ class _RankedCard extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [Color(0xFFFF1A2D), Color(0xFF660000)],
-                  ).createShader(Rect.fromLTWH(0, 0, 100, width * 1.1)),
+                  ).createShader(Rect.fromLTWH(0, 0, 100, 150)),
               ),
             ),
           ),
@@ -412,7 +427,7 @@ class _RankedCard extends StatelessWidget {
                 fontSize: width * 1.1,
                 height: 0.75,
                 fontWeight: FontWeight.w900,
-                color: const Color(0xFF0F0F0F),
+                color: AppColors.background,
               ),
             ),
           ),
@@ -427,6 +442,9 @@ class _RankedCard extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────
+//  PaddingDirectional helper
+// ─────────────────────────────────────────────
 class PaddingDirectional extends StatelessWidget {
   final double startPadding;
   final Widget child;
