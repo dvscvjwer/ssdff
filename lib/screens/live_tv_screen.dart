@@ -1337,3 +1337,381 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       ],
     );
   }
+
+  // ── 4-Layer Bulletproof Broadcast Player Stage ────────────────────────────
+  Widget _buildPlayerStage(
+    BuildContext stageContext, {
+    required bool isFullscreen,
+    required double borderRadius,
+  }) {
+    final VideoPlayerController? ctrl = _videoController;
+    final bool hasValidSize =
+        ctrl != null && _isVideoInitialized && !ctrl.value.size.isEmpty;
+    final double videoW = hasValidSize ? ctrl.value.size.width : 1600.0;
+    final double videoH = hasValidSize ? ctrl.value.size.height : 900.0;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints stageBox) {
+          final bool wideHud = stageBox.maxWidth >= 520;
+
+          return MouseRegion(
+            onHover: (_) => _revealHudTemporarily(),
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                // Layer 0: Animated Broadcast Studio Backdrop (Zero Black Box)
+                AnimatedStudioCanvas(
+                  animation: _studioAnimCtrl,
+                  channel: _activeChannel,
+                  isLoading: _isLoadingStream && !_isVideoInitialized,
+                  hasError: _hasStreamError,
+                  onRetry: () => _loadChannel(_activeChannel, showOsd: false),
+                ),
+
+                // Layer 1: Hardware-Accelerated Video Surface
+                if (ctrl != null)
+                  AnimatedOpacity(
+                    opacity: _isVideoInitialized ? 1.0 : 0.0,
+                    duration: AppDurations.medium,
+                    child: SizedBox.expand(
+                      child: FittedBox(
+                        fit: _fillScreen ? BoxFit.cover : BoxFit.contain,
+                        clipBehavior: Clip.hardEdge,
+                        child: SizedBox(
+                          width: videoW,
+                          height: videoH,
+                          child: VideoPlayer(ctrl),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Tap Surface to Toggle HUD
+                GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: _toggleHudVisibility,
+                  child: const SizedBox.expand(),
+                ),
+
+                // OSD Quick Channel Zapping Banner (when HUD is hidden)
+                if (_showOsdBanner && !_showHud)
+                  PositionedDirectional(
+                    top: 14,
+                    start: 14,
+                    child: _buildOsdBanner(stageContext),
+                  ),
+
+                // Layer 3: Auto-Hide Broadcast HUD Controls
+                IgnorePointer(
+                  ignoring: !_showHud,
+                  child: AnimatedOpacity(
+                    opacity: _showHud ? 1.0 : 0.0,
+                    duration: AppDurations.normal,
+                    child: DecoratedBox(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: <double>[0.0, 0.28, 0.68, 1.0],
+                          colors: <Color>[
+                            Color(0xBD000000),
+                            Color(0x1F000000),
+                            Color(0x2E000000),
+                            Color(0xD6000000),
+                          ],
+                        ),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsetsDirectional.fromSTEB(
+                          isFullscreen ? 24 : 14,
+                          isFullscreen ? 20 : 12,
+                          isFullscreen ? 24 : 14,
+                          isFullscreen ? 20 : 10,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            _buildHudTopBar(
+                              stageContext,
+                              isFullscreen: isFullscreen,
+                              wideHud: wideHud,
+                            ),
+                            _buildHudCenterControls(
+                              stageContext,
+                              wideHud: wideHud,
+                            ),
+                            _buildHudBottomBar(
+                              stageContext,
+                              isFullscreen: isFullscreen,
+                              wideHud: wideHud,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Layer 2/4: Independent Floating Unmute Pill (Always Clickable)
+                if (_isMuted && _isVideoInitialized && !_hasStreamError)
+                  PositionedDirectional(
+                    bottom: _showHud ? (isFullscreen ? 68 : 54) : 14,
+                    start: isFullscreen ? 24 : 14,
+                    child: FloatingUnmutePill(
+                      pulseAnimation: _pulseAnimCtrl,
+                      onTap: _unmuteFromPill,
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildOsdBanner(BuildContext context) {
+    final bool ar = LiveBroadcastType.isAr(context);
+    final EpgSlot current = _activeChannel.buildSchedule(_now).first;
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(14)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xCC0D0D12),
+            borderRadius: const BorderRadius.all(Radius.circular(14)),
+            border: Border.all(
+              color: _activeChannel.brandPrimary.withValues(alpha: 0.60),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              NetworkEmblem(
+                channel: _activeChannel,
+                size: 32,
+                borderRadius: 8,
+              ),
+              const SizedBox(width: 10),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 220),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      'CH ${_activeChannel.number} • ${_activeChannel.name(ar)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LiveBroadcastType.style(
+                        context,
+                        size: 12,
+                        weight: FontWeight.w800,
+                        tabular: true,
+                      ),
+                    ),
+                    Text(
+                      current.title(ar),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LiveBroadcastType.style(
+                        context,
+                        size: 10.5,
+                        weight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHudTopBar(
+    BuildContext stageContext, {
+    required bool isFullscreen,
+    required bool wideHud,
+  }) {
+    final bool ar = LiveBroadcastType.isAr(stageContext);
+    final EpgSlot current = _activeChannel.buildSchedule(_now).first;
+    final String qualityLabel = _selectedQuality == 'Auto'
+        ? _activeChannel.qualityTag
+        : _selectedQuality;
+
+    return Row(
+      children: <Widget>[
+        NetworkEmblem(channel: _activeChannel, size: 30, borderRadius: 8),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                '${_activeChannel.number} • ${_activeChannel.name(ar)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LiveBroadcastType.style(
+                  stageContext,
+                  size: wideHud ? 13.5 : 12,
+                  weight: FontWeight.w800,
+                  tabular: true,
+                ),
+              ),
+              if (wideHud)
+                Text(
+                  current.title(ar),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LiveBroadcastType.style(
+                    stageContext,
+                    size: 11,
+                    weight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+
+        // Pulsing LIVE Badge
+        AnimatedBuilder(
+          animation: _pulseAnimCtrl,
+          builder: (BuildContext context, _) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: <Color>[AppColors.primary, AppColors.primaryLight],
+                ),
+                borderRadius: const BorderRadius.all(Radius.circular(20)),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: AppColors.primary.withValues(
+                      alpha: 0.35 + 0.35 * _pulseAnimCtrl.value,
+                    ),
+                    blurRadius: 12,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(
+                        alpha: 0.55 + 0.45 * _pulseAnimCtrl.value,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    ar ? 'مباشر' : 'LIVE',
+                    style: LiveBroadcastType.style(
+                      stageContext,
+                      size: 10.5,
+                      weight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+
+        // Live Viewers Counter
+        if (wideHud) ...<Widget>[
+          const SizedBox(width: 7),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0x99111111),
+              borderRadius: const BorderRadius.all(Radius.circular(20)),
+              border: Border.all(color: AppColors.cardBorder),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Icon(
+                  Icons.visibility_rounded,
+                  size: 13,
+                  color: AppColors.accentCyan,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  _formattedViewers,
+                  style: LiveBroadcastType.style(
+                    stageContext,
+                    size: 10.5,
+                    weight: FontWeight.w700,
+                    tabular: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+
+        // Quality Selector Pill
+        const SizedBox(width: 7),
+        InkWell(
+          onTap: () => _openQualitySheet(stageContext),
+          borderRadius: const BorderRadius.all(Radius.circular(20)),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xAD141418),
+              borderRadius: const BorderRadius.all(Radius.circular(20)),
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.55),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  qualityLabel,
+                  style: LiveBroadcastType.style(
+                    stageContext,
+                    size: 10.5,
+                    weight: FontWeight.w800,
+                    color: AppColors.gold,
+                  ),
+                ),
+                const SizedBox(width: 3),
+                const Icon(
+                  Icons.tune_rounded,
+                  size: 12,
+                  color: AppColors.gold,
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        if (isFullscreen) ...<Widget>[
+          const SizedBox(width: 8),
+          _HudCircleBtn(
+            icon: Icons.close_rounded,
+            size: 34,
+            iconSize: 18,
+            onTap: () => Navigator.of(stageContext).maybePop(),
+          ),
+        ],
+      ],
+    );
+  }
