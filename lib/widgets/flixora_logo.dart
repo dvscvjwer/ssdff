@@ -1,6 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../theme/app_theme.dart';
+
+// ─────────────────────────────────────────────
+//  FlixoraLogo — SkyLive brand logo widget
+// ─────────────────────────────────────────────
 class FlixoraLogo extends StatelessWidget {
   final double size;
   final bool withTagline;
@@ -21,6 +26,7 @@ class FlixoraLogo extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // ── Logo text ──
           Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -28,7 +34,7 @@ class FlixoraLogo extends StatelessWidget {
             children: [
               // SKY
               Text(
-                "SKY",
+                'SKY',
                 style: GoogleFonts.outfit(
                   fontSize: size,
                   fontWeight: FontWeight.w900,
@@ -46,13 +52,13 @@ class FlixoraLogo extends StatelessWidget {
                     ShaderMask(
                       shaderCallback: (bounds) {
                         return const LinearGradient(
-                          colors: [Color(0xFFFF4B4B), Color(0xFFE50914)],
+                          colors: [Color(0xFFFF4B4B), AppColors.primary],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                         ).createShader(bounds);
                       },
                       child: Text(
-                        "LIVE ",
+                        'LIVE ',
                         softWrap: false,
                         style: GoogleFonts.outfit(
                           fontSize: size * 0.825,
@@ -61,15 +67,16 @@ class FlixoraLogo extends StatelessWidget {
                           color: Colors.white,
                           shadows: [
                             Shadow(
-                              color: const Color(0xFFE50914).withValues(alpha: 0.6),
+                              color: AppColors.primary
+                                  .withValues(alpha: 0.6),
                               blurRadius: size * 0.2,
                               offset: Offset(0, size * 0.05),
-                            )
+                            ),
                           ],
                         ),
                       ),
                     ),
-                    // Underline
+                    // ── Underline ──
                     Container(
                       margin: EdgeInsets.only(top: size * 0.025),
                       height: size * 0.075,
@@ -85,13 +92,15 @@ class FlixoraLogo extends StatelessWidget {
               ),
             ],
           ),
+
+          // ── Tagline ──
           if (withTagline && tagline != null) ...[
             SizedBox(height: size * 0.15),
             Text(
               tagline!.toUpperCase(),
               textAlign: TextAlign.center,
               style: GoogleFonts.outfit(
-                color: const Color(0xFFB1B1B1),
+                color: AppColors.textSecondary,
                 fontSize: size * 0.2,
                 letterSpacing: size * 0.08,
                 fontWeight: FontWeight.w600,
@@ -104,6 +113,9 @@ class FlixoraLogo extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────
+//  _StaticTaperedLinePainter
+// ─────────────────────────────────────────────
 class _StaticTaperedLinePainter extends CustomPainter {
   final Color color;
   final Color glowColor;
@@ -115,35 +127,37 @@ class _StaticTaperedLinePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double startThickness = size.height * 0.15; 
+    final double startThickness = size.height * 0.15;
     final double endThickness = size.height;
     final double centerY = size.height / 2;
     final double halfStart = startThickness / 2;
     final double halfEnd = endThickness / 2;
     final double w = size.width;
 
-    final Path path = Path();
-    path.moveTo(halfStart, centerY - halfStart);
-    path.lineTo(w - halfEnd, centerY - halfEnd);
-    path.arcToPoint(
-      Offset(w - halfEnd, centerY + halfEnd),
-      radius: Radius.circular(halfEnd),
-      clockwise: true,
-    );
-    path.lineTo(halfStart, centerY + halfStart);
-    path.arcToPoint(
-      Offset(halfStart, centerY - halfStart),
-      radius: Radius.circular(halfStart),
-      clockwise: true,
-    );
-    path.close();
+    final path = Path()
+      ..moveTo(halfStart, centerY - halfStart)
+      ..lineTo(w - halfEnd, centerY - halfEnd)
+      ..arcToPoint(
+        Offset(w - halfEnd, centerY + halfEnd),
+        radius: Radius.circular(halfEnd),
+        clockwise: true,
+      )
+      ..lineTo(halfStart, centerY + halfStart)
+      ..arcToPoint(
+        Offset(halfStart, centerY - halfStart),
+        radius: Radius.circular(halfStart),
+        clockwise: true,
+      )
+      ..close();
 
-    final Paint shadowPaint = Paint()
+    // Glow
+    final shadowPaint = Paint()
       ..color = glowColor
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
     canvas.drawPath(path, shadowPaint);
 
-    final Paint fillPaint = Paint()
+    // Fill
+    final fillPaint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
     canvas.drawPath(path, fillPaint);
