@@ -1,3 +1,7 @@
+// ─────────────────────────────────────────────────────────────
+//  player_screen.dart — SkyLive Redesign
+// ─────────────────────────────────────────────────────────────
+
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -8,6 +12,7 @@ import '../l10n/app_localizations.dart';
 import '../models/title.dart';
 import '../theme/app_theme.dart';
 
+// ─── Screen ──────────────────────────────────────────────────
 class PlayerScreen extends StatefulWidget {
   final TitleItem title;
   const PlayerScreen({super.key, required this.title});
@@ -92,15 +97,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.background,
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _toggleControls,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Video placeholder — image backdrop stands in for the stream.
-            Container(color: Colors.black),
+            // ─── Video placeholder ───
+            Container(color: AppColors.background),
             CachedNetworkImage(
               imageUrl: widget.title.backdrop,
               fit: BoxFit.contain,
@@ -113,26 +118,29 @@ class _PlayerScreenState extends State<PlayerScreen> {
     );
   }
 
+  // ─── Controls Overlay ──────────────────────────────────────
   Widget _controlsOverlay() {
     final t = widget.title;
     final pos = _progress * _duration;
     return Container(
-      color: Colors.black.withValues(alpha: 0.4),
+      color: AppColors.overlayBlackLight,
       child: SafeArea(
         minimum: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Column(
           children: [
+            // ─ Top bar ─
             Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: const Icon(Icons.arrow_back,
+                      color: AppColors.textPrimary),
                   onPressed: () => Navigator.pop(context),
                 ),
                 Expanded(
                   child: Text(
                     t.title,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -148,6 +156,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
               ],
             ),
             const Spacer(),
+            // ─ Center controls ─
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -194,6 +203,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     );
   }
 
+  // ─── Locked Overlay ────────────────────────────────────────
   Widget _lockedOverlay() {
     return SafeArea(
       child: Align(
@@ -201,7 +211,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
         child: Padding(
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
-            icon: const Icon(Icons.lock, color: Colors.white, size: 28),
+            icon: const Icon(Icons.lock,
+                color: AppColors.textPrimary, size: 28),
             onPressed: () {
               setState(() {
                 _locked = false;
@@ -215,18 +226,20 @@ class _PlayerScreenState extends State<PlayerScreen> {
     );
   }
 
+  // ─── Bottom Bar ────────────────────────────────────────────
   Widget _bottomBar(double pos) {
     return Column(
       children: [
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             trackHeight: 3,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+            thumbShape:
+                const RoundSliderThumbShape(enabledThumbRadius: 7),
             overlayShape:
                 const RoundSliderOverlayShape(overlayRadius: 14),
             activeTrackColor: AppColors.primary,
-            inactiveTrackColor: Colors.white24,
-            thumbColor: Colors.white,
+            inactiveTrackColor: AppColors.surfaceHigh,
+            thumbColor: AppColors.textPrimary,
             overlayColor: AppColors.primary.withValues(alpha: 0.2),
           ),
           child: Slider(
@@ -241,12 +254,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
             children: [
               Text(
                 _fmt(pos),
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+                style: const TextStyle(
+                    color: AppColors.textPrimary, fontSize: 12),
               ),
               const Spacer(),
               Text(
                 _fmt(_duration),
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+                style: const TextStyle(
+                    color: AppColors.textPrimary, fontSize: 12),
               ),
             ],
           ),
@@ -296,8 +311,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
     );
   }
 
+  // ─── Button helpers ────────────────────────────────────────
   Widget _topBtn(IconData icon, VoidCallback onTap) => IconButton(
-        icon: Icon(icon, color: Colors.white, size: 22),
+        icon: Icon(icon, color: AppColors.textPrimary, size: 22),
         onPressed: () {
           onTap();
           _scheduleHide();
@@ -312,7 +328,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         onTap();
         _scheduleHide();
       },
-      icon: Icon(icon, color: Colors.white),
+      icon: Icon(icon, color: AppColors.textPrimary),
     );
     if (badge == null) return btn;
     return Stack(
@@ -323,7 +339,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
           child: Text(
             badge,
             style: const TextStyle(
-              color: Colors.white,
+              color: AppColors.textPrimary,
               fontSize: 10,
               fontWeight: FontWeight.w800,
             ),
@@ -345,11 +361,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: Colors.white, size: 20),
+              Icon(icon, color: AppColors.textPrimary, size: 20),
               const SizedBox(height: 2),
               Text(
                 label,
-                style: const TextStyle(color: Colors.white, fontSize: 11),
+                style: const TextStyle(
+                    color: AppColors.textPrimary, fontSize: 11),
               ),
             ],
           ),
@@ -358,6 +375,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     );
   }
 
+  // ─── Dialogs ───────────────────────────────────────────────
   String _qualityLabel(BuildContext c) {
     final s = AppLocalizations.of(c);
     return _quality == 'auto' ? s.playerQualityAuto : _quality;
@@ -367,7 +385,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     final s = AppLocalizations.of(context);
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.surfaceModal,
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -422,7 +440,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.surfaceModal,
       builder: (ctx) => SafeArea(
         child: StatefulBuilder(
           builder: (c, setSheetState) {
@@ -433,7 +451,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(icon),
+                      Icon(icon, color: AppColors.textSecondary),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -441,10 +459,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
-                      Text('${(value * 100).round()}%'),
+                      Text(
+                        '${(value * 100).round()}%',
+                        style: const TextStyle(
+                            color: AppColors.textSecondary),
+                      ),
                     ],
                   ),
                   Slider(
@@ -493,7 +516,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.surfaceModal,
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -505,6 +528,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 15,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
