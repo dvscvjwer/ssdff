@@ -511,8 +511,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     if (maxExtent <= 0 || viewport <= 0) {
       return;
     }
-    final bool isWide = MediaQuery.sizeOf(context).width >= 820;
-    final double itemSpan = isWide ? (236.0 + 14.0) : (192.0 + 12.0);
+    final Size viewSize = MediaQuery.sizeOf(context);
+    final bool isWide = viewSize.width >= 820;
+    final bool isUltraShort = viewSize.height < 480;
+    final double cardWidth = isWide ? 236.0 : (isUltraShort ? 168.0 : 192.0);
+    final double gap = isWide ? 14.0 : 12.0;
+    final double itemSpan = cardWidth + gap;
     final double itemStart = idx * itemSpan;
     final double itemEnd = itemStart + itemSpan;
     final double currentOffset = _railScrollCtrl.offset;
@@ -570,6 +574,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   void _openQualitySheet(BuildContext sheetHostContext) {
     showModalBottomSheet<void>(
       context: sheetHostContext,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       elevation: 0,
       builder: (_) => QualityPickerSheet(
@@ -597,6 +602,22 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     );
   }
 
+  void _ensureWebVideoPlayingPostFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final VideoPlayerController? ctrl = _videoController;
+      if (!mounted ||
+          ctrl == null ||
+          !_isVideoInitialized ||
+          _hasStreamError ||
+          !_isPlaying) {
+        return;
+      }
+      if (!ctrl.value.isPlaying) {
+        unawaited(ctrl.play());
+      }
+    });
+  }
+
   Future<void> _openFullscreenPlayer({bool autoUnmute = true}) async {
     if (_isInFullscreen) {
       return;
@@ -611,6 +632,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     });
     _scheduleHudAutoHide();
     _notifyPlayerSync();
+    _ensureWebVideoPlayingPostFrame();
 
     await Navigator.of(context).push<void>(
       PageRouteBuilder<void>(
@@ -635,6 +657,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     }
     setState(() => _isInFullscreen = false);
     _notifyPlayerSync();
+    _ensureWebVideoPlayingPostFrame();
   }
 
   @override
@@ -1666,6 +1689,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints stageBox) {
         final bool wideHud = stageBox.maxWidth >= 560;
+        final bool tallEnoughForCenter = stageBox.maxHeight >= 230;
 
         return MouseRegion(
           onHover: (_) => _revealHudTemporarily(),
@@ -1765,8 +1789,10 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                           _buildFullscreenHudTopBar(
                             stageContext,
                             wideHud: wideHud,
+                            maxStageWidth: stageBox.maxWidth,
                           ),
-                          if (_isVideoInitialized &&
+                          if (tallEnoughForCenter &&
+                              _isVideoInitialized &&
                               !_isLoadingStream &&
                               !_hasStreamError)
                             _buildFullscreenHudCenterControls(wideHud: wideHud)
@@ -1870,94 +1896,110 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   Widget _buildFullscreenHudTopBar(
     BuildContext stageContext, {
     required bool wideHud,
+    required double maxStageWidth,
   }) {
     final bool ar = LiveBroadcastType.isAr(stageContext);
     final EpgSlot current = _activeChannel.buildSchedule(_now).first;
     final String qualityLabel = _selectedQuality == 'Auto'
         ? _activeChannel.qualityTag
         : _selectedQuality;
+    final bool showLivePill = maxStageWidth >= 380;
+    final bool showScheduleBtn = maxStageWidth >= 330;
 
     return Row(
       children: <Widget>[
         NetworkEmblem(channel: _activeChannel, size: 34, borderRadius: 8),
         const SizedBox(width: 10),
-        Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+        Expanded(
+          child: Row(
             children: <Widget>[
-              Text(
-                'CH ${_activeChannel.number}  •  ${_activeChannel.name(ar)}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: LiveBroadcastType.style(
-                  stageContext,
-                  size: wideHud ? 14.5 : 13,
-                  weight: FontWeight.w800,
-                  color: Colors.white,
-                  tabular: true,
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      'CH ${_activeChannel.number}  •  ${_activeChannel.name(ar)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LiveBroadcastType.style(
+                        stageContext,
+                        size: wideHud ? 14.5 : 13,
+                        weight: FontWeight.w800,
+                        color: Colors.white,
+                        tabular: true,
+                      ),
+                    ),
+                    Text(
+                      current.title(ar),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LiveBroadcastType.style(
+                        stageContext,
+                        size: 11.5,
+                        weight: FontWeight.w400,
+                        color: LiveLuxuryPalette.cinemaSilver,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Text(
-                current.title(ar),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: LiveBroadcastType.style(
-                  stageContext,
-                  size: 11.5,
-                  weight: FontWeight.w400,
-                  color: LiveLuxuryPalette.cinemaSilver,
+              if (showLivePill) ...<Widget>[
+                const SizedBox(width: 10),
+                // Pulsing • LIVE Badge
+                AnimatedBuilder(
+                  animation: _pulseAnimCtrl,
+                  builder: (BuildContext context, _) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xB8121216),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(999),
+                        ),
+                        border: Border.all(
+                          color: LiveLuxuryPalette.crimsonActiveRim
+                              .withValues(alpha: 0.45),
+                          width: 0.7,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color:
+                                  LiveLuxuryPalette.crimsonActiveRim.withValues(
+                                alpha: 0.65 + 0.35 * _pulseAnimCtrl.value,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            ar ? 'مباشر' : 'LIVE',
+                            style: LiveBroadcastType.style(
+                              stageContext,
+                              size: 10.5,
+                              weight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-              ),
+              ],
             ],
           ),
         ),
-        const SizedBox(width: 10),
-
-        // Pulsing • LIVE Badge
-        AnimatedBuilder(
-          animation: _pulseAnimCtrl,
-          builder: (BuildContext context, _) {
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xB8121216),
-                borderRadius: const BorderRadius.all(Radius.circular(999)),
-                border: Border.all(
-                  color: LiveLuxuryPalette.crimsonActiveRim
-                      .withValues(alpha: 0.45),
-                  width: 0.7,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: LiveLuxuryPalette.crimsonActiveRim.withValues(
-                        alpha: 0.65 + 0.35 * _pulseAnimCtrl.value,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    ar ? 'مباشر' : 'LIVE',
-                    style: LiveBroadcastType.style(
-                      stageContext,
-                      size: 10.5,
-                      weight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-        const Spacer(),
+        const SizedBox(width: 8),
 
         if (wideHud) ...<Widget>[
           Container(
@@ -2037,13 +2079,15 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         const SizedBox(width: 8),
 
         // On-Demand Schedule Sheet Trigger inside Fullscreen
-        _HudCircleBtn(
-          icon: Icons.calendar_month_rounded,
-          size: 36,
-          iconSize: 16.5,
-          onTap: () => _openScheduleSheet(stageContext, fromFullscreen: true),
-        ),
-        const SizedBox(width: 8),
+        if (showScheduleBtn) ...<Widget>[
+          _HudCircleBtn(
+            icon: Icons.calendar_month_rounded,
+            size: 36,
+            iconSize: 16.5,
+            onTap: () => _openScheduleSheet(stageContext, fromFullscreen: true),
+          ),
+          const SizedBox(width: 8),
+        ],
 
         // Close Fullscreen Button
         _HudCircleBtn(
