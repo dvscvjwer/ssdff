@@ -1,3 +1,7 @@
+// ─────────────────────────────────────────────────────────────
+//  my_list_screen.dart — SkyLive Redesign
+// ─────────────────────────────────────────────────────────────
+
 import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
@@ -7,6 +11,7 @@ import '../services/user_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/title_card.dart';
 
+// ─── Screen ──────────────────────────────────────────────────
 class MyListScreen extends StatelessWidget {
   const MyListScreen({super.key});
 
@@ -14,7 +19,11 @@ class MyListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(s.myListTitle)),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        title: Text(s.myListTitle),
+      ),
       body: AnimatedBuilder(
         animation: userState,
         builder: (_, __) {
@@ -32,9 +41,10 @@ class MyListScreen extends StatelessWidget {
           if (items.isEmpty) return _empty(context);
           return GridView.builder(
             padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              crossAxisSpacing: 8,
+              crossAxisSpacing: 10,
               mainAxisSpacing: 12,
               childAspectRatio: 0.55,
             ),
@@ -59,18 +69,20 @@ class MyListScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.bookmark_border,
-                size: 52, color: AppColors.textTertiary),
+                size: 56, color: AppColors.textTertiary),
             const SizedBox(height: 12),
             Text(
               s.myListEmptyTitle,
               style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               s.myListEmptyHint,
+              textAlign: TextAlign.center,
               style: const TextStyle(color: AppColors.textSecondary),
             ),
           ],
