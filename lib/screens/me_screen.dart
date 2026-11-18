@@ -1,16 +1,21 @@
+// ─────────────────────────────────────────────────────────────
+//  me_screen.dart — SkyLive Redesign
+// ─────────────────────────────────────────────────────────────
+
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/title.dart';
 import '../services/locale_controller.dart';
 import '../services/profile_manager.dart';
+import '../theme/app_theme.dart';
 import 'my_list_screen.dart';
 import 'settings_screen.dart';
 
+// ─── Screen ──────────────────────────────────────────────────
 class MeScreen extends StatefulWidget {
   final Profile active;
   final VoidCallback onSwitchProfile;
@@ -25,8 +30,7 @@ class MeScreen extends StatefulWidget {
 }
 
 class _MeScreenState extends State<MeScreen> {
-  final Color _primaryRed = const Color(0xFFE50914);
-
+  // ─── Avatar builder ──────────────────────────────────────
   Widget _buildAvatar() {
     if (kIsWeb && profileManager.imageBase64 != null) {
       return Image.memory(
@@ -45,11 +49,7 @@ class _MeScreenState extends State<MeScreen> {
     } else {
       return Text(
         widget.active.avatar,
-        style: GoogleFonts.inter(
-          fontSize: 40,
-          fontWeight: FontWeight.w800,
-          color: Colors.white,
-        ),
+        style: AppTextStyles.heroTitle.copyWith(fontSize: 40),
       );
     }
   }
@@ -58,8 +58,9 @@ class _MeScreenState extends State<MeScreen> {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.inter(color: Colors.white)),
-        backgroundColor: const Color(0xFF222222),
+        content: Text(msg,
+            style: AppTextStyles.caption.copyWith(color: AppColors.textPrimary)),
+        backgroundColor: AppColors.surfaceHigh,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(20),
@@ -67,10 +68,11 @@ class _MeScreenState extends State<MeScreen> {
     );
   }
 
+  // ─── Language Picker ─────────────────────────────────────
   void _openLanguagePicker() {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF151515),
+      backgroundColor: AppColors.surfaceModal,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -85,17 +87,13 @@ class _MeScreenState extends State<MeScreen> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 24),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: AppColors.textPrimary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               Text(
                 AppLocalizations.of(context).menuLanguage,
-                style: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: AppTextStyles.sectionTitle.copyWith(fontSize: 20),
               ),
               const SizedBox(height: 16),
               _LangTile(
@@ -108,7 +106,7 @@ class _MeScreenState extends State<MeScreen> {
                 },
               ),
               _LangTile(
-                label: 'Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©',
+                label: 'العربية',
                 locale: const Locale('ar'),
                 current: localeController.value,
                 onTap: () {
@@ -127,7 +125,7 @@ class _MeScreenState extends State<MeScreen> {
   Widget build(BuildContext context) {
     final s = AppLocalizations.of(context);
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -154,18 +152,19 @@ class _MeScreenState extends State<MeScreen> {
                             height: 108,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: _primaryRed, width: 3),
+                              border: Border.all(
+                                  color: AppColors.primary, width: 3),
                               boxShadow: [
                                 BoxShadow(
-                                  color: _primaryRed.withValues(alpha: 0.3),
+                                  color: AppColors.glowRed,
                                   blurRadius: 20,
                                   spreadRadius: 2,
-                                )
+                                ),
                               ],
                             ),
                             child: ClipOval(
                               child: Container(
-                                color: const Color(0xFF151515),
+                                color: AppColors.surface,
                                 alignment: Alignment.center,
                                 child: _buildAvatar(),
                               ),
@@ -179,9 +178,11 @@ class _MeScreenState extends State<MeScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.black, width: 3),
+                                border: Border.all(
+                                    color: AppColors.background, width: 3),
                               ),
-                              child: const Icon(Icons.camera_alt_rounded, color: Colors.black, size: 16),
+                              child: const Icon(Icons.camera_alt_rounded,
+                                  color: Colors.black, size: 16),
                             ),
                           ),
                         ],
@@ -190,38 +191,54 @@ class _MeScreenState extends State<MeScreen> {
                   },
                 ),
                 const SizedBox(height: 20),
-                // Name
+
+                // ─── Name ───
                 AnimatedBuilder(
                   animation: profileManager,
                   builder: (context, _) {
-                    final currentName = profileManager.userName ?? widget.active.name;
+                    final currentName =
+                        profileManager.userName ?? widget.active.name;
                     return GestureDetector(
                       onTap: () async {
-                        final controller = TextEditingController(text: currentName);
+                        final controller =
+                            TextEditingController(text: currentName);
                         final newName = await showDialog<String>(
                           context: context,
                           builder: (dctx) => AlertDialog(
-                            backgroundColor: const Color(0xFF1A1A1A),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            title: Text('Edit Profile', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700)),
+                            backgroundColor: AppColors.surfaceModal,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20)),
+                            title: Text('Edit Profile',
+                                style: AppTextStyles.sectionTitle
+                                    .copyWith(fontSize: 18)),
                             content: TextField(
                               controller: controller,
-                              style: GoogleFonts.inter(color: Colors.white),
+                              style: AppTextStyles.body
+                                  .copyWith(color: AppColors.textPrimary),
                               decoration: InputDecoration(
                                 hintText: 'Enter your name',
-                                hintStyle: GoogleFonts.inter(color: Colors.white54),
-                                enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                                focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _primaryRed)),
+                                hintStyle: AppTextStyles.caption,
+                                enabledBorder: const UnderlineInputBorder(
+                                    borderSide:
+                                        BorderSide(color: AppColors.divider)),
+                                focusedBorder: const UnderlineInputBorder(
+                                    borderSide:
+                                        BorderSide(color: AppColors.primary)),
                               ),
                             ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(dctx),
-                                child: Text('Cancel', style: GoogleFonts.inter(color: Colors.white54)),
+                                child: Text('Cancel',
+                                    style: AppTextStyles.caption
+                                        .copyWith(color: AppColors.textTertiary)),
                               ),
                               TextButton(
-                                onPressed: () => Navigator.pop(dctx, controller.text.trim()),
-                                child: Text('Save', style: GoogleFonts.inter(color: _primaryRed, fontWeight: FontWeight.w700)),
+                                onPressed: () =>
+                                    Navigator.pop(dctx, controller.text.trim()),
+                                child: Text('Save',
+                                    style: AppTextStyles.cardTitle
+                                        .copyWith(color: AppColors.primary)),
                               ),
                             ],
                           ),
@@ -235,41 +252,44 @@ class _MeScreenState extends State<MeScreen> {
                         children: [
                           Text(
                             currentName,
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
+                            style: AppTextStyles.heroTitle.copyWith(
                               fontSize: 28,
-                              fontWeight: FontWeight.w800,
                               letterSpacing: -0.5,
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Icon(Icons.edit_rounded, color: Colors.white.withValues(alpha: 0.4), size: 18),
+                          Icon(Icons.edit_rounded,
+                              color: AppColors.textPrimary
+                                  .withValues(alpha: 0.4),
+                              size: 18),
                         ],
                       ),
                     );
                   },
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // ─── Premium Subscription Banner ───
                 GestureDetector(
-                  onTap: () => _toast(context, 'Premium Features Coming Soon'),
+                  onTap: () =>
+                      _toast(context, 'Premium Features Coming Soon'),
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 24),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 20),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFFE50914), Color(0xFFAA0000)],
+                        colors: [AppColors.primary, Color(0xFFAA0000)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
+                      boxShadow: const [
                         BoxShadow(
-                          color: _primaryRed.withValues(alpha: 0.3),
+                          color: AppColors.glowRed,
                           blurRadius: 15,
-                          offset: const Offset(0, 5),
+                          offset: Offset(0, 5),
                         ),
                       ],
                     ),
@@ -278,10 +298,12 @@ class _MeScreenState extends State<MeScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: AppColors.textPrimary
+                                .withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.star_rounded, color: Colors.white, size: 28),
+                          child: const Icon(Icons.star_rounded,
+                              color: Colors.white, size: 28),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -290,8 +312,7 @@ class _MeScreenState extends State<MeScreen> {
                             children: [
                               Text(
                                 'Sky Live Premium',
-                                style: GoogleFonts.inter(
-                                  color: Colors.white,
+                                style: AppTextStyles.sectionTitle.copyWith(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -299,8 +320,9 @@ class _MeScreenState extends State<MeScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 'Unlock all sports & movies',
-                                style: GoogleFonts.inter(
-                                  color: Colors.white.withValues(alpha: 0.9),
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.textPrimary
+                                      .withValues(alpha: 0.9),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -308,7 +330,9 @@ class _MeScreenState extends State<MeScreen> {
                             ],
                           ),
                         ),
-                        Icon(Icons.chevron_right_rounded, color: Colors.white.withValues(alpha: 0.8)),
+                        Icon(Icons.chevron_right_rounded,
+                            color: AppColors.textPrimary
+                                .withValues(alpha: 0.8)),
                       ],
                     ),
                   ),
@@ -325,9 +349,9 @@ class _MeScreenState extends State<MeScreen> {
             sliver: SliverToBoxAdapter(
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF111111),
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                  border: Border.all(color: AppColors.divider),
                 ),
                 child: Column(
                   children: [
@@ -335,21 +359,35 @@ class _MeScreenState extends State<MeScreen> {
                       icon: Icons.bookmark_rounded,
                       label: s.actionMyList,
                       onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(builder: (_) => const MyListScreen()),
+                        MaterialPageRoute<void>(
+                            builder: (_) => const MyListScreen()),
                       ),
                     ),
-                    _Divider(),
+                    const _Divider(),
                     _SettingsTile(
                       icon: Icons.language_rounded,
                       label: s.menuLanguage,
-                      subtitle: localeController.value?.languageCode == 'ar' ? 'Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©' : 'English',
+                      subtitle:
+                          localeController.value?.languageCode == 'ar'
+                              ? 'العربية'
+                              : 'English',
                       onTap: _openLanguagePicker,
                     ),
-                    _Divider(),
+                    const _Divider(),
+                    _SettingsTile(
+                      icon: Icons.settings_rounded,
+                      label: s.settingsTitle,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                            builder: (_) => const SettingsScreen()),
+                      ),
+                    ),
+                    const _Divider(),
                     _SettingsTile(
                       icon: Icons.info_outline_rounded,
                       label: 'About Sky Live',
-                      onTap: () => _toast(context, 'Sky Live v1.0.0'),
+                      onTap: () =>
+                          _toast(context, 'Sky Live v1.0.0'),
                     ),
                   ],
                 ),
@@ -359,10 +397,10 @@ class _MeScreenState extends State<MeScreen> {
 
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-          SliverToBoxAdapter(
+          const SliverToBoxAdapter(
             child: SafeArea(
               top: false,
-              child: const SizedBox(height: 40),
+              child: SizedBox(height: 40),
             ),
           ),
         ],
@@ -371,6 +409,7 @@ class _MeScreenState extends State<MeScreen> {
   }
 }
 
+// ─── Settings Tile ───────────────────────────────────────────
 class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -399,31 +438,34 @@ class _SettingsTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         child: Row(
           children: [
-            Icon(icon, size: 24, color: iconColor ?? Colors.white.withValues(alpha: 0.7)),
+            Icon(icon,
+                size: 24,
+                color: iconColor ??
+                    AppColors.textPrimary.withValues(alpha: 0.7)),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 label,
-                style: GoogleFonts.inter(
-                  color: textColor ?? Colors.white,
+                style: AppTextStyles.cardTitle.copyWith(
+                  color: textColor ?? AppColors.textPrimary,
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
             if (subtitle != null)
               Text(
                 subtitle!,
-                style: GoogleFonts.inter(
-                  color: Colors.white.withValues(alpha: 0.5),
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textPrimary.withValues(alpha: 0.5),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-            if (subtitle != null && showArrow)
-              const SizedBox(width: 8),
+            if (subtitle != null && showArrow) const SizedBox(width: 8),
             if (showArrow)
-              Icon(Icons.chevron_right_rounded, color: Colors.white.withValues(alpha: 0.3), size: 20),
+              Icon(Icons.chevron_right_rounded,
+                  color: AppColors.textPrimary.withValues(alpha: 0.3),
+                  size: 20),
           ],
         ),
       ),
@@ -431,19 +473,23 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
+// ─── Divider ─────────────────────────────────────────────────
 class _Divider extends StatelessWidget {
+  const _Divider();
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 60),
       child: Container(
         height: 1,
-        color: Colors.white.withValues(alpha: 0.05),
+        color: AppColors.divider,
       ),
     );
   }
 }
 
+// ─── Language Tile ────────────────────────────────────────────
 class _LangTile extends StatelessWidget {
   final String label;
   final Locale locale;
@@ -464,13 +510,15 @@ class _LangTile extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 32),
       title: Text(
         label,
-        style: GoogleFonts.inter(
-          color: isSelected ? Colors.white : Colors.white70,
+        style: AppTextStyles.body.copyWith(
+          color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
           fontSize: 18,
           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
         ),
       ),
-      trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: Color(0xFFE50914)) : null,
+      trailing: isSelected
+          ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+          : null,
       onTap: onTap,
     );
   }
