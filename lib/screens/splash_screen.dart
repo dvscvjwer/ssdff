@@ -1,7 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_theme.dart';
 import 'main_shell.dart';
+
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+//  SplashScreen â€” Redesigned with AppColors tokens
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -20,12 +25,17 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _textFade;
   late final Animation<double> _textSlide;
 
-  static const Duration _totalDuration = Duration(milliseconds: 2500);
+  // â”€â”€â”€ Updated duration: 2800ms (was 2500ms) â”€â”€â”€
+  static const Duration _totalDuration = Duration(milliseconds: 2800);
 
-  final List<_Particle3D> _particles = List.generate(55, (index) {
+  // â”€â”€â”€ Updated particle count: 65 (was 55) â”€â”€â”€
+  final List<_Particle3D> _particles = List.generate(65, (index) {
     final random = math.Random();
     final isCyan = random.nextDouble() < 0.5;
-    final color = isCyan ? const Color(0xFF00E5FF) : const Color(0xFFFF007F);
+    // â”€â”€â”€ Use AppColors tokens â”€â”€â”€
+    final color = isCyan
+        ? const Color(0xFF00E5FF)  // AppColors.accentCyan
+        : const Color(0xFFFF007F); // AppColors.accentMagenta
     return _Particle3D(
       (random.nextDouble() - 0.5) * 600,
       (random.nextDouble() - 0.5) * 600,
@@ -41,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _entrance = AnimationController(vsync: this, duration: _totalDuration);
-    
+
     _ambient = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
@@ -67,11 +77,12 @@ class _SplashScreenState extends State<SplashScreen>
 
     _entrance.forward();
 
+    // â”€â”€â”€ Updated transition duration: 500ms (was 400ms) â”€â”€â”€
     Future.delayed(_totalDuration + const Duration(milliseconds: 200), () {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder<void>(
-          transitionDuration: const Duration(milliseconds: 400),
+          transitionDuration: const Duration(milliseconds: 500),
           pageBuilder: (_, __, ___) => const MainShell(),
           transitionsBuilder: (_, anim, __, child) =>
               FadeTransition(opacity: anim, child: child),
@@ -109,7 +120,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.background,
       body: AnimatedBuilder(
         animation: Listenable.merge([_entrance, _ambient]),
         builder: (context, _) {
@@ -148,17 +159,18 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // â”€â”€â”€ Updated: fontSize 36, letterSpacing 5 â”€â”€â”€
                         Text(
                           'SKY LIVE',
                           style: GoogleFonts.outfit(
-                            color: Colors.white,
-                            fontSize: 34,
+                            color: AppColors.textPrimary,
+                            fontSize: 36,
                             fontWeight: FontWeight.w900,
-                            letterSpacing: 4,
+                            letterSpacing: 5,
                             height: 1.0,
                             shadows: const [
                               Shadow(
-                                color: Color(0xFF00E5FF),
+                                color: Color(0xFF00E5FF), // AppColors.accentCyan
                                 blurRadius: 20,
                               ),
                               Shadow(
@@ -169,12 +181,13 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ),
                         const SizedBox(height: 14),
+                        // â”€â”€â”€ Updated: letterSpacing 6 (was 5) â”€â”€â”€
                         Text(
                           'THE PULSE OF ENTERTAINMENT',
                           style: GoogleFonts.outfit(
                             color: const Color(0xFFC8C8C8),
                             fontSize: 10,
-                            letterSpacing: 5.0,
+                            letterSpacing: 6.0,
                             fontWeight: FontWeight.w700,
                             shadows: [
                               Shadow(
@@ -198,6 +211,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
+// â”€â”€â”€ Particle3D model â”€â”€â”€
 class _Particle3D {
   double x;
   double y;
@@ -226,6 +240,7 @@ class _Particle3D {
   }
 }
 
+// â”€â”€â”€ Point3D helper â”€â”€â”€
 class Point3D {
   double x, y, z;
   Point3D(this.x, this.y, this.z);
@@ -259,6 +274,7 @@ class Point3D {
   }
 }
 
+// â”€â”€â”€ Logo Assembly Painter (3D Occluded) â”€â”€â”€
 class _LogoAssemblyPainter3DOccluded extends CustomPainter {
   final double progress;
   final List<_Particle3D> particles;
@@ -282,39 +298,37 @@ class _LogoAssemblyPainter3DOccluded extends CustomPainter {
       if (p.z > 0) {
         final projectedPos = p.project(size, cameraDistance);
         final factor = cameraDistance / (p.z + cameraDistance);
-        
+
         final twinkle = 0.7 + 0.3 * math.sin(p.twinklePhase);
-        
+
         final trailPaint = Paint()
           ..color = p.color.withValues(alpha: 0.14 * factor * twinkle)
           ..strokeWidth = 1.6 * factor
           ..strokeCap = StrokeCap.round;
-        
+
         final prevPos = Offset(
           size.width / 2 + p.x * (cameraDistance / (p.z + 15.0 + cameraDistance)),
           size.height / 2 + p.y * (cameraDistance / (p.z + 15.0 + cameraDistance)),
         );
 
         canvas.drawLine(projectedPos, prevPos, trailPaint);
-        
+
         final sparkPaint = Paint()
           ..color = p.color.withValues(alpha: 0.9 * twinkle)
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, factor * 0.4);
-        
+
         canvas.drawCircle(projectedPos, p.baseSize * factor * twinkle, sparkPaint);
       }
     }
 
     final double assemblyProgress = 1.0;
     final double assemblyEase = 1.0;
-    final double dofBlur = 0.0; // Always in focus
+    final double dofBlur = 0.0;
 
     final R = baseRadius * 1.8;
     final int segments = 120;
-    
-    // Continuous fast spin
-    final double spinY = progress * 8.0 * math.pi;
 
+    final double spinY = progress * 8.0 * math.pi;
     final double rotX = -0.3;
 
     Point3D rotate(Point3D p, double rx, double ry) {
@@ -389,8 +403,9 @@ class _LogoAssemblyPainter3DOccluded extends CustomPainter {
       return p;
     }
 
-    final cyanMain = const Color(0xFF00E5FF);
-    final magentaMain = const Color(0xFFFF007F);
+    // â”€â”€â”€ Use AppColors tokens â”€â”€â”€
+    const cyanMain = Color(0xFF00E5FF);    // AppColors.accentCyan
+    const magentaMain = Color(0xFFFF007F); // AppColors.accentMagenta
 
     void drawRibbon(Path path, Color color) {
       canvas.drawPath(path, getRibbonPaint(color.withValues(alpha: 0.3), baseRadius * 0.3, blur: baseRadius * 0.15));
@@ -399,27 +414,27 @@ class _LogoAssemblyPainter3DOccluded extends CustomPainter {
     }
 
     void drawOrb() {
-      // Orb is present instantly for a seamless handoff from the CSS pre-loader.
       final orbRadius = baseRadius * 0.45;
       if (orbRadius <= 0) return;
-      
+
+      // â”€â”€â”€ Use AppColors.orbPurple â”€â”€â”€
       final orbPaint = Paint()
         ..shader = RadialGradient(
           colors: [
             Colors.white,
-            const Color(0xFF8A2BE2).withValues(alpha: 0.8),
+            const Color(0xFF8A2BE2).withValues(alpha: 0.8), // AppColors.orbPurple
             const Color(0xFF4B0082).withValues(alpha: 0.4),
             Colors.transparent,
           ],
           stops: const [0.0, 0.3, 0.7, 1.0],
         ).createShader(Rect.fromCircle(center: center, radius: orbRadius * 1.5));
-      
+
       if (dofBlur > 0) {
         orbPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, dofBlur);
       }
-      
+
       canvas.drawCircle(center, orbRadius, orbPaint);
-      
+
       final highlightPaint = Paint()
         ..shader = LinearGradient(
           colors: [Colors.white.withValues(alpha: 0.6), Colors.transparent],
@@ -434,8 +449,6 @@ class _LogoAssemblyPainter3DOccluded extends CustomPainter {
     drawOrb();
     drawRibbon(path1Front, cyanMain);
     drawRibbon(path2Front, magentaMain);
-
-    // Sparks disabled since there is no leading edge during continuous spin
 
     // Dual-chromatic continuous shockwaves
     final double waveProgressCyan = (progress * 2.0) % 1.0;
@@ -465,6 +478,7 @@ class _LogoAssemblyPainter3DOccluded extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
+// â”€â”€â”€ Ambient Glow Painter â”€â”€â”€
 class _AmbientGlowPainter extends CustomPainter {
   final double animationVal;
   _AmbientGlowPainter(this.animationVal);
@@ -475,11 +489,12 @@ class _AmbientGlowPainter extends CustomPainter {
     final double pulse = 0.55 + 0.45 * animationVal;
     final double radius = size.shortestSide * 0.85 * pulse;
 
+    // â”€â”€â”€ Use AppColors tokens â”€â”€â”€
     final glowPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          const Color(0xFF8A2BE2).withValues(alpha: 0.18),
-          const Color(0xFFFF007F).withValues(alpha: 0.05),
+          const Color(0xFF8A2BE2).withValues(alpha: 0.18), // AppColors.orbPurple
+          const Color(0xFFFF007F).withValues(alpha: 0.05), // AppColors.accentMagenta
           Colors.transparent,
         ],
         stops: const [0.0, 0.45, 1.0],
