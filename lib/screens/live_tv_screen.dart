@@ -1715,3 +1715,276 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       ],
     );
   }
+
+  Widget _buildHudCenterControls(
+    BuildContext stageContext, {
+    required bool wideHud,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        _HudCircleBtn(
+          icon: Icons.skip_previous_rounded,
+          size: wideHud ? 44 : 38,
+          iconSize: wideHud ? 23 : 20,
+          onTap: () => _stepChannel(-1),
+        ),
+        SizedBox(width: wideHud ? 22 : 16),
+        _HudCircleBtn(
+          icon: _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+          size: wideHud ? 58 : 48,
+          iconSize: wideHud ? 30 : 26,
+          isPrimary: true,
+          onTap: _togglePlayPause,
+        ),
+        SizedBox(width: wideHud ? 22 : 16),
+        _HudCircleBtn(
+          icon: Icons.skip_next_rounded,
+          size: wideHud ? 44 : 38,
+          iconSize: wideHud ? 23 : 20,
+          onTap: () => _stepChannel(1),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHudBottomBar(
+    BuildContext stageContext, {
+    required bool isFullscreen,
+    required bool wideHud,
+  }) {
+    final bool ar = LiveBroadcastType.isAr(stageContext);
+    final EpgSlot current = _activeChannel.buildSchedule(_now).first;
+    final double progress = current.progressAt(_now);
+    final bool audioActive = _isVideoInitialized && _isPlaying && !_isMuted;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        // Glowing Live Broadcast Progress Edge
+        ClipRRect(
+          borderRadius: const BorderRadius.all(Radius.circular(3)),
+          child: Container(
+            height: 3.5,
+            width: double.infinity,
+            color: Colors.white.withValues(alpha: 0.18),
+            alignment: AlignmentDirectional.centerStart,
+            child: FractionallySizedBox(
+              widthFactor: progress,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: <Color>[
+                      _activeChannel.brandPrimary,
+                      AppColors.primaryLight,
+                      AppColors.accentCyan,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: <Widget>[
+            _HudCircleBtn(
+              icon: _isMuted
+                  ? Icons.volume_off_rounded
+                  : (_volume < 0.5
+                      ? Icons.volume_down_rounded
+                      : Icons.volume_up_rounded),
+              size: 34,
+              iconSize: 18,
+              onTap: _toggleMute,
+            ),
+            if (wideHud) ...<Widget>[
+              SizedBox(
+                width: 92,
+                height: 28,
+                child: SliderTheme(
+                  data: SliderTheme.of(stageContext).copyWith(
+                    trackHeight: 3,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 5.5,
+                    ),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 11,
+                    ),
+                    activeTrackColor: AppColors.accentCyan,
+                    inactiveTrackColor: Colors.white.withValues(alpha: 0.24),
+                    thumbColor: Colors.white,
+                  ),
+                  child: Slider(
+                    value: _isMuted ? 0.0 : _volume,
+                    onChanged: _setVolumeLevel,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(width: 8),
+            EqualizerBars(
+              animation: _eqAnimCtrl,
+              isActive: audioActive,
+              height: 13,
+            ),
+            const Spacer(),
+
+            // Go Live Edge Pill
+            InkWell(
+              onTap: _jumpToLiveEdge,
+              borderRadius: const BorderRadius.all(Radius.circular(16)),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: const BorderRadius.all(Radius.circular(16)),
+                  border: Border.all(
+                    color: AppColors.accentCyan.withValues(alpha: 0.45),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Container(
+                      width: 5.5,
+                      height: 5.5,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.accentCyan,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      ar ? 'اللحظة الحية' : 'GO LIVE',
+                      style: LiveBroadcastType.style(
+                        stageContext,
+                        size: 10,
+                        weight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 7),
+
+            // Fit / Cover Toggle
+            _HudCircleBtn(
+              icon: _fillScreen
+                  ? Icons.fit_screen_rounded
+                  : Icons.aspect_ratio_rounded,
+              size: 34,
+              iconSize: 17,
+              onTap: () {
+                setState(() => _fillScreen = !_fillScreen);
+                _notifyPlayerSync();
+                _revealHudTemporarily();
+              },
+            ),
+            const SizedBox(width: 7),
+
+            // Fullscreen Toggle
+            _HudCircleBtn(
+              icon: isFullscreen
+                  ? Icons.fullscreen_exit_rounded
+                  : Icons.fullscreen_rounded,
+              size: 34,
+              iconSize: 19,
+              onTap: isFullscreen
+                  ? () => Navigator.of(stageContext).maybePop()
+                  : _openFullscreenPlayer,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  HUD Glass Circle Button & Immersive Fullscreen Stage
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _HudCircleBtn extends StatelessWidget {
+  final IconData icon;
+  final double size;
+  final double iconSize;
+  final bool isPrimary;
+  final VoidCallback onTap;
+
+  const _HudCircleBtn({
+    required this.icon,
+    required this.size,
+    required this.iconSize,
+    required this.onTap,
+    this.isPrimary = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: ClipOval(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: isPrimary
+                    ? const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: <Color>[
+                          AppColors.primary,
+                          AppColors.primaryDark,
+                        ],
+                      )
+                    : null,
+                color: isPrimary ? null : const Color(0x99141418),
+                border: Border.all(
+                  color: isPrimary
+                      ? Colors.white.withValues(alpha: 0.45)
+                      : Colors.white.withValues(alpha: 0.22),
+                ),
+                boxShadow: isPrimary ? AppShadows.glow : null,
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, size: iconSize, color: Colors.white),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FullscreenBroadcastPage extends StatelessWidget {
+  final ValueNotifier<int> syncListenable;
+  final WidgetBuilder stageBuilder;
+
+  const _FullscreenBroadcastPage({
+    required this.syncListenable,
+    required this.stageBuilder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: ValueListenableBuilder<int>(
+          valueListenable: syncListenable,
+          builder: (BuildContext ctx, _, __) {
+            return SizedBox.expand(child: stageBuilder(ctx));
+          },
+        ),
+      ),
+    );
+  }
+}
