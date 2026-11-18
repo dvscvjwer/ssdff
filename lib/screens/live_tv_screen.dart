@@ -880,3 +880,460 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       ),
     );
   }
+
+  // ── Mobile & Portrait Tablet Sticky Stage Layout (width < 960px) ──────────
+  Widget _buildCompactMobileLayout(
+    BuildContext context, {
+    required AppLocalizations? l10n,
+    required bool canPop,
+    required BoxConstraints constraints,
+  }) {
+    final List<EpgSlot> slots = _activeChannel.buildSchedule(_now);
+    final double stickyMaxHeight =
+        (constraints.maxHeight * 0.34).clamp(185.0, 290.0);
+
+    return Column(
+      children: <Widget>[
+        // Sticky Top Broadcast Player Stage
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(12, 2, 12, 0),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: stickyMaxHeight),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.all(Radius.circular(15)),
+                  border: Border.all(
+                    color: _activeChannel.brandPrimary.withValues(alpha: 0.42),
+                  ),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color:
+                          _activeChannel.brandPrimary.withValues(alpha: 0.22),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: _buildPlayerStage(
+                  context,
+                  isFullscreen: false,
+                  borderRadius: 14,
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Live Match Quick Ribbon (Sports Channels)
+        if (_activeChannel.liveMatch != null)
+          CompactMatchRibbon(
+            match: _activeChannel.liveMatch!,
+            pulseAnimation: _pulseAnimCtrl,
+            onTap: () {
+              unawaited(HapticFeedback.selectionClick());
+              setState(() => _mobileTabIndex = 1);
+            },
+          ),
+
+        // Segmented Switcher: Live Channels vs Program & Match Info
+        _buildMobileSegmentedTabs(context),
+
+        // Active Tab Body
+        Expanded(
+          child: _mobileTabIndex == 0
+              ? _buildGuidePanel(
+                  context,
+                  l10n: l10n,
+                  isWide: false,
+                  bottomPad: canPop ? 18 : 26,
+                )
+              : SingleChildScrollView(
+                  padding: EdgeInsetsDirectional.fromSTEB(
+                    14,
+                    4,
+                    14,
+                    canPop ? 18 : 26,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      ActiveProgramCard(
+                        channel: _activeChannel,
+                        currentSlot: slots[0],
+                        nextSlot: slots[1],
+                        now: _now,
+                        isFavorite: _favoriteIds.contains(_activeChannel.id),
+                        onToggleFavorite: () => _toggleFavorite(_activeChannel),
+                        onPrevChannel: () => _stepChannel(-1),
+                        onNextChannel: () => _stepChannel(1),
+                      ),
+                      if (_activeChannel.liveMatch != null) ...<Widget>[
+                        const SizedBox(height: 12),
+                        LiveMatchScorebugCard(
+                          match: _activeChannel.liveMatch!,
+                          pulseAnimation: _pulseAnimCtrl,
+                        ),
+                      ],
+                      const SizedBox(height: 14),
+                      BroadcastScheduleStrip(
+                        channel: _activeChannel,
+                        slots: slots,
+                        now: _now,
+                        remindedSlotIds: _remindedSlotIds,
+                        onToggleReminder: _toggleSlotReminder,
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileSegmentedTabs(BuildContext context) {
+    final bool ar = LiveBroadcastType.isAr(context);
+    final int count = _filteredChannels.length;
+    final List<String> labels = <String>[
+      ar ? 'دليل القنوات ($count)' : 'Live Channels ($count)',
+      ar ? 'تفاصيل البث والجدول' : 'Program & Match Info',
+    ];
+
+    return Container(
+      height: 40,
+      margin: const EdgeInsetsDirectional.fromSTEB(14, 8, 14, 6),
+      padding: const EdgeInsets.all(3.5),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Row(
+        children: List<Widget>.generate(2, (int idx) {
+          final bool active = _mobileTabIndex == idx;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                unawaited(HapticFeedback.selectionClick());
+                setState(() => _mobileTabIndex = idx);
+              },
+              child: AnimatedContainer(
+                duration: AppDurations.normal,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  gradient: active
+                      ? const LinearGradient(
+                          colors: <Color>[
+                            AppColors.primary,
+                            AppColors.primaryDark,
+                          ],
+                        )
+                      : null,
+                  borderRadius: const BorderRadius.all(Radius.circular(9)),
+                ),
+                child: Text(
+                  labels[idx],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LiveBroadcastType.style(
+                    context,
+                    size: 12,
+                    weight: active ? FontWeight.w800 : FontWeight.w600,
+                    color:
+                        active ? Colors.white : AppColors.textSecondary,
+                    tabular: true,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  // ── Interactive TV Guide Panel (Search + Category Pills + Channel List) ───
+  Widget _buildGuidePanel(
+    BuildContext context, {
+    required AppLocalizations? l10n,
+    required bool isWide,
+    required double bottomPad,
+  }) {
+    final bool ar = LiveBroadcastType.isAr(context);
+    final List<LiveChannel> filtered = _filteredChannels;
+    final bool audioActive = _isVideoInitialized && _isPlaying && !_isMuted;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(
+            14,
+            isWide ? 14 : 4,
+            14,
+            8,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              if (isWide) ...<Widget>[
+                Row(
+                  children: <Widget>[
+                    const Icon(
+                      Icons.live_tv_rounded,
+                      size: 18,
+                      color: AppColors.primaryLight,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        l10n?.liveTvGuide ??
+                            (ar ? 'دليل القنوات المباشرة' : 'Live TV Guide'),
+                        style: LiveBroadcastType.style(
+                          context,
+                          size: 16,
+                          weight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceAlt,
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(10)),
+                        border: Border.all(color: AppColors.cardBorder),
+                      ),
+                      child: Text(
+                        '${filtered.length}',
+                        style: LiveBroadcastType.style(
+                          context,
+                          size: 11.5,
+                          weight: FontWeight.w800,
+                          color: AppColors.accentCyan,
+                          tabular: true,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // Instant Search Input
+              SizedBox(
+                height: 42,
+                child: TextField(
+                  controller: _searchCtrl,
+                  onChanged: (String v) => setState(() => _searchQuery = v),
+                  style: LiveBroadcastType.style(
+                    context,
+                    size: 13,
+                    weight: FontWeight.w500,
+                  ),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: AppColors.surfaceAlt,
+                    hintText: ar
+                        ? 'ابحث عن قناة، برنامج، أو مباراة...'
+                        : 'Search channel, show, or live match...',
+                    hintStyle: LiveBroadcastType.style(
+                      context,
+                      size: 12.5,
+                      weight: FontWeight.w400,
+                      color: AppColors.textTertiary,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      size: 19,
+                      color: AppColors.textSecondary,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                            icon: const Icon(
+                              Icons.close_rounded,
+                              size: 17,
+                              color: AppColors.textSecondary,
+                            ),
+                          )
+                        : null,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                    enabledBorder: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide(color: AppColors.divider),
+                    ),
+                    focusedBorder: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide:
+                          BorderSide(color: AppColors.primary, width: 1.4),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Category Filter Chips
+              SizedBox(
+                height: 34,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: LiveCategory.values.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 7),
+                  itemBuilder: (BuildContext context, int index) {
+                    final LiveCategory cat = LiveCategory.values[index];
+                    final bool selected = _selectedCategory == cat;
+                    return InkWell(
+                      onTap: () {
+                        unawaited(HapticFeedback.selectionClick());
+                        setState(() => _selectedCategory = cat);
+                      },
+                      borderRadius: const BorderRadius.all(Radius.circular(18)),
+                      child: AnimatedContainer(
+                        duration: AppDurations.normal,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          gradient: selected
+                              ? const LinearGradient(
+                                  colors: <Color>[
+                                    AppColors.primary,
+                                    AppColors.primaryDark,
+                                  ],
+                                )
+                              : null,
+                          color: selected ? null : AppColors.surfaceAlt,
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(18)),
+                          border: Border.all(
+                            color: selected
+                                ? AppColors.primaryLight
+                                : AppColors.cardBorder,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(
+                              cat.icon,
+                              size: 14,
+                              color: selected
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              cat.label(context, l10n),
+                              style: LiveBroadcastType.style(
+                                context,
+                                size: 11.5,
+                                weight:
+                                    selected ? FontWeight.w800 : FontWeight.w600,
+                                color: selected
+                                    ? Colors.white
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Filtered Channels List
+        Expanded(
+          child: filtered.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const Icon(
+                          Icons.tv_off_rounded,
+                          size: 40,
+                          color: AppColors.textTertiary,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          l10n?.liveNoChannelsInCategory ??
+                              (ar
+                                  ? 'لا توجد قنوات مطابقة للفلتر الحالي'
+                                  : 'No channels match your current filter'),
+                          textAlign: TextAlign.center,
+                          style: LiveBroadcastType.style(
+                            context,
+                            size: 13.5,
+                            weight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextButton.icon(
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            setState(() {
+                              _searchQuery = '';
+                              _selectedCategory = LiveCategory.all;
+                            });
+                          },
+                          icon: const Icon(Icons.restart_alt_rounded, size: 17),
+                          label: Text(
+                            ar ? 'عرض جميع القنوات' : 'Show All Channels',
+                            style: LiveBroadcastType.style(
+                              context,
+                              size: 12.5,
+                              weight: FontWeight.w700,
+                              color: AppColors.accentCyan,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  padding: EdgeInsetsDirectional.fromSTEB(
+                    12,
+                    2,
+                    12,
+                    bottomPad,
+                  ),
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (BuildContext context, int index) {
+                    final LiveChannel channel = filtered[index];
+                    final bool isSelected = channel.id == _activeChannel.id;
+                    return EpgChannelTile(
+                      channel: channel,
+                      now: _now,
+                      isSelected: isSelected,
+                      isPlayingAudio: isSelected && audioActive,
+                      isFavorite: _favoriteIds.contains(channel.id),
+                      equalizerAnim: _eqAnimCtrl,
+                      onTap: () {
+                        if (!isSelected) {
+                          _loadChannel(channel);
+                        } else {
+                          _revealHudTemporarily();
+                        }
+                      },
+                      onToggleFavorite: () => _toggleFavorite(channel),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
