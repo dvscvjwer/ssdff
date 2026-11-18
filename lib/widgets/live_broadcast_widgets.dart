@@ -2248,3 +2248,330 @@ class CompactMatchRibbon extends StatelessWidget {
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  6. ActiveProgramCard & BroadcastScheduleStrip (Now & Up Next Timeline)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class ActiveProgramCard extends StatelessWidget {
+  final LiveChannel channel;
+  final EpgSlot currentSlot;
+  final EpgSlot nextSlot;
+  final DateTime now;
+  final bool isFavorite;
+  final VoidCallback onToggleFavorite;
+  final VoidCallback onPrevChannel;
+  final VoidCallback onNextChannel;
+
+  const ActiveProgramCard({
+    super.key,
+    required this.channel,
+    required this.currentSlot,
+    required this.nextSlot,
+    required this.now,
+    required this.isFavorite,
+    required this.onToggleFavorite,
+    required this.onPrevChannel,
+    required this.onNextChannel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool ar = LiveBroadcastType.isAr(context);
+    final AppLocalizations? l10n =
+        Localizations.of<AppLocalizations>(context, AppLocalizations);
+    final double progress = currentSlot.progressAt(now);
+    final int remaining = currentSlot.remainingMinutesAt(now);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: AppGradients.cardGradient,
+        borderRadius: const BorderRadius.all(Radius.circular(16)),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              NetworkEmblem(channel: channel, size: 52, borderRadius: 14),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          'CH ${channel.number}',
+                          style: LiveBroadcastType.style(
+                            context,
+                            size: 11,
+                            weight: FontWeight.w800,
+                            color: AppColors.accentCyan,
+                            tabular: true,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            channel.name(ar),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: LiveBroadcastType.style(
+                              context,
+                              size: 16,
+                              weight: FontWeight.w800,
+                              display: true,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: <Widget>[
+                        _MiniSpecBadge(
+                          text: channel.qualityTag,
+                          color: AppColors.gold,
+                        ),
+                        _MiniSpecBadge(
+                          text: channel.audioTag(ar),
+                          color: AppColors.accentCyan,
+                        ),
+                        _MiniSpecBadge(
+                          text: channel.category.label(context, l10n),
+                          color: AppColors.textSecondary,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: onToggleFavorite,
+                tooltip: ar ? 'المفضلة' : 'Favorite',
+                icon: Icon(
+                  isFavorite
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  color: isFavorite
+                      ? AppColors.primaryLight
+                      : AppColors.textSecondary,
+                  size: 21,
+                ),
+              ),
+              _SmallZapButton(
+                icon: Icons.skip_previous_rounded,
+                tooltip: ar ? 'القناة السابقة' : 'Previous Channel',
+                onTap: onPrevChannel,
+              ),
+              const SizedBox(width: 6),
+              _SmallZapButton(
+                icon: Icons.skip_next_rounded,
+                tooltip: ar ? 'القناة التالية' : 'Next Channel',
+                onTap: onNextChannel,
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1, color: AppColors.divider),
+          ),
+          Row(
+            children: <Widget>[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.18),
+                  borderRadius: const BorderRadius.all(Radius.circular(6)),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.55),
+                  ),
+                ),
+                child: Text(
+                  l10n?.channelNowGeneric.toUpperCase() ??
+                      (ar ? 'الآن على الهواء' : 'ON AIR NOW'),
+                  style: LiveBroadcastType.style(
+                    context,
+                    size: 10,
+                    weight: FontWeight.w800,
+                    color: AppColors.primaryLight,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                currentSlot.timeRangeLabel,
+                style: LiveBroadcastType.style(
+                  context,
+                  size: 12,
+                  weight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                  tabular: true,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                ar ? 'متبقي $remaining دقيقة' : '${remaining}m remaining',
+                style: LiveBroadcastType.style(
+                  context,
+                  size: 11.5,
+                  weight: FontWeight.w700,
+                  color: AppColors.accentCyan,
+                  tabular: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            currentSlot.title(ar),
+            style: LiveBroadcastType.style(
+              context,
+              size: 16.5,
+              weight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            currentSlot.description(ar),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: LiveBroadcastType.style(
+              context,
+              size: 12.5,
+              weight: FontWeight.w400,
+              color: AppColors.textSecondary,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: const BorderRadius.all(Radius.circular(4)),
+            child: Container(
+              height: 5,
+              width: double.infinity,
+              color: AppColors.surfaceHigh,
+              alignment: AlignmentDirectional.centerStart,
+              child: FractionallySizedBox(
+                widthFactor: progress,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        channel.brandPrimary,
+                        AppColors.accentCyan,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: <Widget>[
+              const Icon(
+                Icons.schedule_rounded,
+                size: 14,
+                color: AppColors.textTertiary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                ar
+                    ? 'التالي (${EpgSlot.formatClock(nextSlot.startTime)}): '
+                    : 'Up Next (${EpgSlot.formatClock(nextSlot.startTime)}): ',
+                style: LiveBroadcastType.style(
+                  context,
+                  size: 11.5,
+                  weight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                  tabular: true,
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  nextSlot.title(ar),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LiveBroadcastType.style(
+                    context,
+                    size: 11.5,
+                    weight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniSpecBadge extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _MiniSpecBadge({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: const BorderRadius.all(Radius.circular(5)),
+        border: Border.all(color: color.withValues(alpha: 0.35), width: 0.7),
+      ),
+      child: Text(
+        text,
+        style: LiveBroadcastType.style(
+          context,
+          size: 9.5,
+          weight: FontWeight.w700,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _SmallZapButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _SmallZapButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        child: Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceAlt,
+            borderRadius: const BorderRadius.all(Radius.circular(10)),
+            border: Border.all(color: AppColors.cardBorder),
+          ),
+          child: Icon(icon, size: 19, color: AppColors.textPrimary),
+        ),
+      ),
+    );
+  }
+}
