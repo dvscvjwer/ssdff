@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-//  collection_screen.dart — SkyLive Redesign (EXPANDED)
+//  collection_screen.dart — SkyLive Redesign
 // ─────────────────────────────────────────────────────────────
 
 import 'package:flutter/material.dart';
@@ -29,13 +29,35 @@ class _CollectionScreenState extends State<CollectionScreen>
 
   static const _filters = ['All', 'Movies', 'Series', 'New', 'Top Rated'];
 
+  List<TitleItem> get _filteredItems {
+    switch (_selectedFilter) {
+      case 'Movies':
+        return widget.items
+            .where((t) => t.kind == TitleKind.movie)
+            .toList(growable: false);
+      case 'Series':
+        return widget.items
+            .where((t) => t.kind == TitleKind.series)
+            .toList(growable: false);
+      case 'New':
+        return widget.items
+            .where((t) => t.year >= 2024)
+            .toList(growable: false);
+      case 'Top Rated':
+        final sorted = List<TitleItem>.from(widget.items)
+          ..sort((a, b) => b.rating.compareTo(a.rating));
+        return sorted;
+      default:
+        return widget.items;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _staggerController = AnimationController(
       vsync: this,
-      duration: Duration(
-          milliseconds: 350 + widget.items.length * 50),
+      duration: Duration(milliseconds: 350 + widget.items.length * 50),
     )..forward();
   }
 
@@ -47,6 +69,8 @@ class _CollectionScreenState extends State<CollectionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final items = _filteredItems;
+    final totalDuration = 350 + items.length * 50;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
@@ -71,7 +95,7 @@ class _CollectionScreenState extends State<CollectionScreen>
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Color(0xFF1A0A0A),
+                      Color(0xFF1F080A),
                       AppColors.background,
                     ],
                   ),
@@ -90,18 +114,17 @@ class _CollectionScreenState extends State<CollectionScreen>
                   children: [
                     for (final filter in _filters)
                       Padding(
-                        padding: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsetsDirectional.only(end: 8),
                         child: ChoiceChip(
                           label: Text(filter),
                           selected: _selectedFilter == filter,
                           onSelected: (selected) {
                             setState(() {
-                              _selectedFilter =
-                                  selected ? filter : 'All';
+                              _selectedFilter = selected ? filter : 'All';
                             });
                           },
-                          selectedColor: AppColors.primary
-                              .withValues(alpha: 0.15),
+                          selectedColor:
+                              AppColors.primary.withValues(alpha: 0.15),
                           backgroundColor: AppColors.surfaceAlt,
                           side: BorderSide(
                             color: _selectedFilter == filter
@@ -130,8 +153,7 @@ class _CollectionScreenState extends State<CollectionScreen>
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
             sliver: SliverGrid(
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
@@ -139,39 +161,31 @@ class _CollectionScreenState extends State<CollectionScreen>
               ),
               delegate: SliverChildBuilderDelegate(
                 (_, i) {
-                  final totalDuration =
-                      350 + widget.items.length * 50;
-                  final start =
-                      (i * 50) / totalDuration;
+                  final start = ((i * 50) / totalDuration).clamp(0.0, 1.0);
                   final end =
-                      (i * 50 + 350) / totalDuration;
-                  final anim = CurvedAnimation(
-                    parent: _staggerController,
-                    curve: Interval(
-                      start.clamp(0.0, 1.0),
-                      end.clamp(0.0, 1.0),
-                      curve: Curves.easeOutCubic,
-                    ),
-                  );
+                      ((i * 50 + 350) / totalDuration).clamp(0.0, 1.0);
+                  final interval =
+                      Interval(start, end, curve: Curves.easeOutCubic);
                   return AnimatedBuilder(
-                    animation: anim,
+                    animation: _staggerController,
                     builder: (_, child) {
+                      final t = interval.transform(_staggerController.value);
                       return Opacity(
-                        opacity: anim.value,
+                        opacity: t,
                         child: Transform.translate(
-                          offset: Offset(0, 20 * (1 - anim.value)),
+                          offset: Offset(0, 20 * (1 - t)),
                           child: child,
                         ),
                       );
                     },
                     child: TitleCard(
-                      title: widget.items[i],
+                      title: items[i],
                       width: 120,
                       showTitle: true,
                     ),
                   );
                 },
-                childCount: widget.items.length,
+                childCount: items.length,
               ),
             ),
           ),
