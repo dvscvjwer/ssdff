@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // ─────────────────────────────────────────────────
@@ -443,7 +443,7 @@ ThemeData buildDarkTheme({Locale? locale}) {
     iconTheme: const IconThemeData(color: AppColors.textPrimary, size: 22),
 
     // ── Card ─────────────────────────────────────
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color:        AppColors.surfaceCard,
       elevation:    0,
       margin:       EdgeInsets.zero,
@@ -550,7 +550,7 @@ ThemeData buildDarkTheme({Locale? locale}) {
     ),
 
     // ── Dialog ────────────────────────────────────
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: AppColors.surfaceModal,
       elevation:       24,
       shape: RoundedRectangleBorder(
@@ -583,9 +583,9 @@ ThemeData buildDarkTheme({Locale? locale}) {
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
         TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-        TargetPlatform.iOS:     CupertinoPageTransitionsBuilder(),
+        TargetPlatform.iOS:     ZoomPageTransitionsBuilder(),
         TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
-        TargetPlatform.macOS:   CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS:   ZoomPageTransitionsBuilder(),
       },
     ),
 
@@ -605,7 +605,7 @@ ThemeData buildDarkTheme({Locale? locale}) {
     ),
 
     // ── Tab bar ──────────────────────────────────
-    tabBarTheme: const TabBarTheme(
+    tabBarTheme: const TabBarThemeData(
       labelColor:           AppColors.textPrimary,
       unselectedLabelColor: AppColors.textTertiary,
       indicatorColor:       AppColors.primary,
