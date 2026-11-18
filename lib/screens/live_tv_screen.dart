@@ -145,7 +145,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   void _toggleSlotReminder(EpgSlot slot) {
     unawaited(HapticFeedback.selectionClick());
     final bool ar = LiveBroadcastType.isAr(context);
-    final bool added;
+    bool added = false;
     setState(() {
       if (_remindedSlotIds.contains(slot.id)) {
         _remindedSlotIds.remove(slot.id);
