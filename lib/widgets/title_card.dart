@@ -1,10 +1,13 @@
-﻿import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../models/title.dart';
 import '../screens/detail_screen.dart';
 import '../theme/app_theme.dart';
 
+// ─────────────────────────────────────────────
+//  TitleCard — Poster card with badges & shimmer
+// ─────────────────────────────────────────────
 class TitleCard extends StatefulWidget {
   final TitleItem title;
   final double width;
@@ -25,9 +28,28 @@ class TitleCard extends StatefulWidget {
   State<TitleCard> createState() => _TitleCardState();
 }
 
-class _TitleCardState extends State<TitleCard> {
+class _TitleCardState extends State<TitleCard>
+    with SingleTickerProviderStateMixin {
   bool _pressed = false;
+  late final AnimationController _shimmerCtrl;
 
+  // ── Lifecycle ──────────────────────────────
+  @override
+  void initState() {
+    super.initState();
+    _shimmerCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _shimmerCtrl.dispose();
+    super.dispose();
+  }
+
+  // ── Build ──────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final isNew = widget.title.year >= 2025;
@@ -45,8 +67,8 @@ class _TitleCardState extends State<TitleCard> {
         );
       },
       child: AnimatedScale(
-        scale: _pressed ? 0.94 : 1.0,
-        duration: const Duration(milliseconds: 120),
+        scale: _pressed ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 100),
         curve: Curves.easeOutCubic,
         child: SizedBox(
           width: widget.width,
@@ -54,85 +76,92 @@ class _TitleCardState extends State<TitleCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // â”€â”€â”€ Poster Image â”€â”€â”€
+              // ── Poster Image ──
               AspectRatio(
                 aspectRatio: widget.aspectRatio,
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: const [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
+                        color: Color(0x66000000), // 40%
+                        blurRadius: 16,
+                        offset: Offset(0, 8),
                       ),
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        // Image
+                        // ── Image ──
                         CachedNetworkImage(
                           imageUrl: widget.title.poster,
                           fit: BoxFit.cover,
-                          placeholder: (_, __) => _shimmerPlaceholder(),
-                          errorWidget: (_, __, ___) => Container(
+                          placeholder: (_, __) =>
+                              _buildAnimatedShimmer(),
+                          errorWidget: (_, __, ___) => const ColoredBox(
                             color: AppColors.surfaceAlt,
-                            child: const Icon(Icons.broken_image_rounded,
+                            child: Icon(Icons.broken_image_rounded,
                                 color: AppColors.textTertiary),
                           ),
                         ),
 
-                        // Glass shine overlay
-                        Positioned.fill(
+                        // ── Glass shine overlay ──
+                        const Positioned.fill(
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                begin: const Alignment(-1.0, -1.0),
-                                end: const Alignment(1.0, 1.0),
+                                begin: Alignment(-1.0, -1.0),
+                                end: Alignment(1.0, 1.0),
                                 colors: [
-                                  Colors.white.withValues(alpha: 0.1),
-                                  Colors.transparent,
-                                  Colors.transparent,
-                                  Colors.black.withValues(alpha: 0.25),
+                                  Color(0x14FFFFFF), // 8%
+                                  Color(0x00FFFFFF),
+                                  Color(0x00FFFFFF),
+                                  Color(0x33000000), // 20%
                                 ],
-                                stops: const [0.0, 0.25, 0.65, 1.0],
+                                stops: [0.0, 0.3, 0.7, 1.0],
                               ),
                             ),
                           ),
                         ),
 
-                        // Bottom gradient for text
+                        // ── Bottom gradient for text ──
                         Positioned(
-                          left: 0, right: 0, bottom: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
                           child: Container(
                             height: 60,
                             decoration: const BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: [Colors.transparent, Color(0xEE000000)],
+                                colors: [
+                                  Colors.transparent,
+                                  Color(0xEE000000),
+                                ],
                               ),
                             ),
                           ),
                         ),
 
-                        // â”€â”€â”€ Badges â”€â”€â”€
-                        // Rating badge (top left)
+                        // ── Badges ──
+
+                        // Rating badge (top-left)
                         if (widget.showRating)
                           PositionedDirectional(
-                            top: 7,
-                            start: 7,
+                            top: 6,
+                            start: 6,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 7, vertical: 3),
+                                  horizontal: 6, vertical: 3),
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.7),
-                                borderRadius: BorderRadius.circular(6),
+                                color: const Color(0xB3000000), // 70%
+                                borderRadius: BorderRadius.circular(5),
                                 border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.1),
+                                  color: const Color(0x1AFFFFFF),
                                   width: 0.5,
                                 ),
                               ),
@@ -140,13 +169,14 @@ class _TitleCardState extends State<TitleCard> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const Icon(Icons.star_rounded,
-                                      color: AppColors.accent, size: 13),
+                                      color: AppColors.accent, size: 12),
                                   const SizedBox(width: 3),
                                   Text(
-                                    widget.title.rating.toStringAsFixed(1),
+                                    widget.title.rating
+                                        .toStringAsFixed(1),
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 11,
+                                      fontSize: 10,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -155,23 +185,26 @@ class _TitleCardState extends State<TitleCard> {
                             ),
                           ),
 
-                        // NEW badge (top right) for 2025+ titles
+                        // NEW badge (top-right)
                         if (isNew)
                           PositionedDirectional(
-                            top: 7,
-                            end: 7,
+                            top: 6,
+                            end: 6,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 7, vertical: 3),
+                                  horizontal: 6, vertical: 3),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFFFF1A2D), Color(0xFFE50914)],
+                                  colors: [
+                                    Color(0xFFFF1A2D),
+                                    Color(0xFFE50914),
+                                  ],
                                 ),
-                                borderRadius: BorderRadius.circular(5),
-                                boxShadow: [
+                                borderRadius: BorderRadius.circular(4),
+                                boxShadow: const [
                                   BoxShadow(
-                                    color: const Color(0xFFE50914).withValues(alpha: 0.5),
-                                    blurRadius: 6,
+                                    color: Color(0x80E50914),
+                                    blurRadius: 8,
                                   ),
                                 ],
                               ),
@@ -179,26 +212,26 @@ class _TitleCardState extends State<TitleCard> {
                                 'NEW',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 9,
+                                  fontSize: 8,
                                   fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.8,
+                                  letterSpacing: 1.0,
                                 ),
                               ),
                             ),
                           ),
 
-                        // HD badge (bottom right)
+                        // HD badge (bottom-right)
                         PositionedDirectional(
-                          bottom: 7,
-                          end: 7,
+                          bottom: 6,
+                          end: 6,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
+                              color: const Color(0x26FFFFFF), // 15%
                               borderRadius: BorderRadius.circular(3),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.3),
+                                color: const Color(0x4DFFFFFF), // 30%
                                 width: 0.5,
                               ),
                             ),
@@ -206,7 +239,7 @@ class _TitleCardState extends State<TitleCard> {
                               'HD',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 8,
+                                fontSize: 7,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.5,
                               ),
@@ -214,16 +247,16 @@ class _TitleCardState extends State<TitleCard> {
                           ),
                         ),
 
-                        // Series indicator (bottom left)
+                        // Series indicator (bottom-left)
                         if (widget.title.kind == TitleKind.series)
                           PositionedDirectional(
-                            bottom: 7,
-                            start: 7,
+                            bottom: 6,
+                            start: 6,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF6C3FE5).withValues(alpha: 0.85),
+                                color: const Color(0xD96C3FE5), // 85%
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -242,27 +275,22 @@ class _TitleCardState extends State<TitleCard> {
                 ),
               ),
 
-              // â”€â”€â”€ Title text below card â”€â”€â”€
+              // ── Title text below card ──
               if (widget.showTitle) ...[
                 const SizedBox(height: 8),
                 Text(
                   widget.title.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.1,
-                  ),
+                  style: AppTextStyles.cardTitle,
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${widget.title.year} â€¢ ${widget.title.genres.take(2).join(', ')}',
+                  '${widget.title.year} • ${widget.title.genres.take(2).join(', ')}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.45),
+                  style: const TextStyle(
+                    color: Color(0x73FFFFFF), // 45%
                     fontSize: 10.5,
                     fontWeight: FontWeight.w500,
                   ),
@@ -275,19 +303,42 @@ class _TitleCardState extends State<TitleCard> {
     );
   }
 
-  Widget _shimmerPlaceholder() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.surfaceAlt,
-            AppColors.surfaceHigh,
-            AppColors.surfaceAlt,
-          ],
-        ),
-      ),
+  // ── Animated shimmer placeholder ──
+  Widget _buildAnimatedShimmer() {
+    return AnimatedBuilder(
+      animation: _shimmerCtrl,
+      builder: (context, child) {
+        return ShaderMask(
+          shaderCallback: (bounds) {
+            final double translate =
+                _shimmerCtrl.value * (bounds.width * 2) - bounds.width;
+            return LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: const [
+                Color(0xFF1A1A1A),
+                Color(0xFF252525),
+                Color(0xFF1A1A1A),
+              ],
+              stops: const [0.0, 0.5, 1.0],
+              transform: _SlidingGradientTransform(translate),
+            ).createShader(bounds);
+          },
+          blendMode: BlendMode.srcATop,
+          child: Container(color: const Color(0xFF1A1A1A)),
+        );
+      },
     );
+  }
+}
+
+// ── Gradient transform helper ──
+class _SlidingGradientTransform extends GradientTransform {
+  final double slideAmount;
+  const _SlidingGradientTransform(this.slideAmount);
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(slideAmount, 0.0, 0.0);
   }
 }
