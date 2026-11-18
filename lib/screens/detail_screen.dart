@@ -43,6 +43,7 @@ class _DetailScreenState extends State<DetailScreen> {
           SliverAppBar(
             expandedHeight: 380,
             pinned: true,
+            stretch: true,
             backgroundColor: AppColors.background,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
@@ -66,6 +67,11 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.parallax,
+              stretchModes: const [
+                StretchMode.zoomBackground,
+                StretchMode.fadeTitle,
+              ],
               background: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -470,7 +476,9 @@ class _DetailScreenState extends State<DetailScreen> {
                       duration: const Duration(milliseconds: 250),
                       curve: Curves.easeOutCubic,
                       height: 3,
-                      width: _section == i ? 36 : 0,
+                      width: _section == i
+                          ? (sections[i].length * 7.5 + 8).clamp(32.0, 110.0)
+                          : 0,
                       decoration: BoxDecoration(
                         color: _section == i
                             ? AppColors.primary
