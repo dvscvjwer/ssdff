@@ -6,6 +6,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:video_player/video_player.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../theme/app_theme.dart';
+
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+//  LiveTvScreen â€” Redesigned with AppColors tokens + pulsing LIVE
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+
 class LiveTvScreen extends StatefulWidget {
   const LiveTvScreen({super.key});
 
@@ -13,25 +19,30 @@ class LiveTvScreen extends StatefulWidget {
   State<LiveTvScreen> createState() => _LiveTvScreenState();
 }
 
-class _LiveTvScreenState extends State<LiveTvScreen> {
+class _LiveTvScreenState extends State<LiveTvScreen>
+    with SingleTickerProviderStateMixin {
   int _selectedCategoryIndex = 0;
   int _selectedChannelIndex = 0;
-  
+
   VideoPlayerController? _videoController;
   bool _isVideoInitialized = false;
 
-  // Premium Colors (Red Theme)
-  final Color _primaryRed = const Color(0xFFE50914); // Deep Netflix Red
-  final Color _brightRed = const Color(0xFFFF3B30); // Bright iOS Red
+  // â”€â”€â”€ Pulsing LIVE badge animation â”€â”€â”€
+  late final AnimationController _livePulseCtrl;
 
   @override
   void initState() {
     super.initState();
+    _livePulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
     _initializeVideoPlayer(_currentChannel.videoUrl);
   }
-  
+
   _Channel get _currentChannel {
-    return _MockEpgData.categories[_selectedCategoryIndex].channels[_selectedChannelIndex];
+    return _MockEpgData
+        .categories[_selectedCategoryIndex].channels[_selectedChannelIndex];
   }
 
   void _initializeVideoPlayer(String url) async {
@@ -40,7 +51,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
       oldController.pause();
       oldController.dispose();
     }
-    
+
     setState(() {
       _isVideoInitialized = false;
     });
@@ -51,7 +62,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
       _videoController!.setLooping(true);
       _videoController!.setVolume(1.0);
       _videoController!.play();
-      
+
       if (mounted) {
         setState(() {
           _isVideoInitialized = true;
@@ -83,6 +94,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
 
   @override
   void dispose() {
+    _livePulseCtrl.dispose();
     _videoController?.dispose();
     super.dispose();
   }
@@ -94,10 +106,10 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
     final currentCategory = _MockEpgData.categories[_selectedCategoryIndex];
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Subtle Colorful Ambient Glow based on selection
+          // â”€â”€â”€ Ambient Glow â”€â”€â”€
           AnimatedPositioned(
             duration: const Duration(milliseconds: 800),
             top: 100,
@@ -109,7 +121,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    _primaryRed.withValues(alpha: 0.15),
+                    AppColors.primary.withValues(alpha: 0.15),
                     Colors.transparent,
                   ],
                 ),
@@ -127,7 +139,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    _brightRed.withValues(alpha: 0.1),
+                    AppColors.primaryLight.withValues(alpha: 0.1),
                     Colors.transparent,
                   ],
                 ),
@@ -138,7 +150,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
           CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // ─── Edge-to-Edge Video Player ───
+              // â”€â”€â”€ Edge-to-Edge Video Player â”€â”€â”€
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.only(top: screenPadding.top),
@@ -158,14 +170,16 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                           else
                             Center(
                               child: CircularProgressIndicator(
-                                color: _primaryRed,
+                                color: AppColors.primary,
                                 strokeWidth: 2,
                               ),
                             ),
-                          
+
                           // Smooth gradient fade
                           Positioned(
-                            bottom: 0, left: 0, right: 0,
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
                             height: 100,
                             child: Container(
                               decoration: BoxDecoration(
@@ -180,35 +194,50 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                               ),
                             ),
                           ),
-                          
-                          // Colorful Live Badge
+
+                          // â”€â”€â”€ LIVE Badge with pulsing animation â”€â”€â”€
                           Positioned(
                             top: 16,
                             left: 16,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [_primaryRed, _brightRed],
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: _primaryRed.withValues(alpha: 0.4),
-                                    blurRadius: 10,
-                                    spreadRadius: 1,
-                                  )
-                                ],
-                              ),
-                              child: Text(
-                                'LIVE',
-                                style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
+                            child: AnimatedBuilder(
+                              animation: _livePulseCtrl,
+                              builder: (context, child) {
+                                final opacity =
+                                    0.85 + (_livePulseCtrl.value * 0.15);
+                                return Opacity(
+                                  opacity: opacity,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFFE50914), // AppColors.primary
+                                          Color(0xFFFF3B30), // AppColors.primaryLight
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.primary
+                                              .withValues(alpha: 0.4),
+                                          blurRadius: 12,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Text(
+                                      'LIVE',
+                                      style: GoogleFonts.inter(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 1.2,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
 
@@ -219,16 +248,19 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(20),
                               child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                filter:
+                                    ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                                 child: Container(
                                   color: Colors.black.withValues(alpha: 0.4),
                                   child: IconButton(
-                                    icon: const Icon(Icons.fullscreen, color: Colors.white, size: 24),
+                                    icon: const Icon(Icons.fullscreen,
+                                        color: AppColors.textPrimary, size: 24),
                                     onPressed: () {
                                       if (_videoController != null) {
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
-                                            builder: (context) => _LiveFullscreenPlayer(
+                                            builder: (context) =>
+                                                _LiveFullscreenPlayer(
                                               controller: _videoController!,
                                             ),
                                           ),
@@ -247,24 +279,26 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                 ),
               ),
 
-              // ─── Minimalist Channel Header ───
+              // â”€â”€â”€ Channel Header â”€â”€â”€
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   child: Row(
                     children: [
-                      // Clean Logo Box
+                      // â”€â”€â”€ Logo: 56x56 borderRadius:14 â”€â”€â”€
                       Container(
-                        width: 60,
-                        height: 60,
+                        width: 56,
+                        height: 56,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF111111),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                          color: const Color(0xFF111111), // AppColors.surface
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: const Color(0x1AFFFFFF)), // glassSurface
                           boxShadow: [
                             BoxShadow(
-                              color: _primaryRed.withValues(alpha: 0.15),
-                              blurRadius: 15,
+                              color: AppColors.primary.withValues(alpha: 0.15),
+                              blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
                           ],
@@ -278,7 +312,6 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                         ),
                       ),
                       const SizedBox(width: 20),
-                      // Large Clean Typography
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,7 +322,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                 featuredChannel.name,
                                 key: ValueKey(featuredChannel.name),
                                 style: GoogleFonts.inter(
-                                  color: Colors.white,
+                                  color: AppColors.textPrimary,
                                   fontSize: 26,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: -0.5,
@@ -305,7 +338,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                 featuredChannel.nowPlaying,
                                 key: ValueKey(featuredChannel.nowPlaying),
                                 style: GoogleFonts.inter(
-                                  color: _brightRed,
+                                  color: AppColors.primaryLight,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -323,17 +356,18 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
 
               const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
-              // ─── Section Title (Channels) ───
+              // â”€â”€â”€ Section Title (Channels) â”€â”€â”€
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
                     children: [
                       Container(
                         width: 4,
                         height: 16,
                         decoration: BoxDecoration(
-                          color: _primaryRed,
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -341,7 +375,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                       Text(
                         'Up Next',
                         style: GoogleFonts.inter(
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.5,
@@ -351,13 +385,13 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                   ),
                 ),
               ),
-              
+
               const SliverToBoxAdapter(child: SizedBox(height: 8)),
-              
-              // ─── Minimalist Floating Cards (Channels) ───
+
+              // â”€â”€â”€ Channel Cards: 72x72 width:100 borderRadius:16 â”€â”€â”€
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 80, 
+                  height: 80,
                   child: ListView.builder(
                     physics: const BouncingScrollPhysics(),
                     scrollDirection: Axis.horizontal,
@@ -366,37 +400,42 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                     itemBuilder: (context, index) {
                       final channel = currentCategory.channels[index];
                       final isSelected = index == _selectedChannelIndex;
-                      
+
                       return GestureDetector(
                         onTap: () => _onChannelSelected(index),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeOutCubic,
                           margin: const EdgeInsets.only(right: 12),
-                          width: 110, 
+                          width: 100,
                           decoration: BoxDecoration(
-                            color: isSelected 
-                                ? _primaryRed.withValues(alpha: 0.15)
-                                : Colors.white.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(20),
+                            color: isSelected
+                                ? AppColors.primary.withValues(alpha: 0.15)
+                                : const Color(0x0DFFFFFF),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isSelected 
-                                  ? _primaryRed.withValues(alpha: 0.5) 
+                              color: isSelected
+                                  ? AppColors.primary.withValues(alpha: 0.5)
                                   : Colors.transparent,
                               width: 1.5,
                             ),
-                            boxShadow: isSelected ? [
-                              BoxShadow(
-                                color: _primaryRed.withValues(alpha: 0.2),
-                                blurRadius: 15,
-                                offset: const Offset(0, 5),
-                              )
-                            ] : [],
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.primary
+                                          .withValues(alpha: 0.2),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ]
+                                : [],
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(16),
                             child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                              // â”€â”€â”€ Backdrop blur: sigma 12 (was 15) â”€â”€â”€
+                              filter:
+                                  ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                               child: Center(
                                 child: AnimatedScale(
                                   scale: isSelected ? 1.05 : 0.95,
@@ -407,7 +446,10 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                     child: CachedNetworkImage(
                                       imageUrl: channel.logo,
                                       fit: BoxFit.contain,
-                                      color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.5),
+                                      color: isSelected
+                                          ? AppColors.textPrimary
+                                          : AppColors.textPrimary
+                                              .withValues(alpha: 0.5),
                                     ),
                                   ),
                                 ),
@@ -422,18 +464,19 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
               ),
 
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
-              
-              // ─── Section Title (Categories) ───
+
+              // â”€â”€â”€ Section Title (Categories) â”€â”€â”€
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
                     children: [
                       Container(
                         width: 4,
                         height: 16,
                         decoration: BoxDecoration(
-                          color: _primaryRed,
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -441,7 +484,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                       Text(
                         'Categories',
                         style: GoogleFonts.inter(
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.5,
@@ -451,10 +494,10 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                   ),
                 ),
               ),
-              
+
               const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
-              // ─── Apple TV Style Minimalist List (Packages) ───
+              // â”€â”€â”€ Category Tiles â”€â”€â”€
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 sliver: SliverList(
@@ -462,19 +505,18 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                     (context, index) {
                       final category = _MockEpgData.categories[index];
                       final isSelected = index == _selectedCategoryIndex;
-                      
+
                       return _MinimalistCategoryTile(
                         category: category,
                         isSelected: isSelected,
                         onTap: () => _onCategorySelected(index),
-                        accentColor: _primaryRed,
                       );
                     },
                     childCount: _MockEpgData.categories.length,
                   ),
                 ),
               ),
-              
+
               SliverToBoxAdapter(
                 child: SafeArea(
                   top: false,
@@ -489,17 +531,16 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
   }
 }
 
+// â”€â”€â”€ Category Tile â”€â”€â”€
 class _MinimalistCategoryTile extends StatelessWidget {
   final _Category category;
   final bool isSelected;
   final VoidCallback onTap;
-  final Color accentColor;
 
   const _MinimalistCategoryTile({
     required this.category,
     required this.isSelected,
     required this.onTap,
-    required this.accentColor,
   });
 
   @override
@@ -511,80 +552,92 @@ class _MinimalistCategoryTile extends StatelessWidget {
         curve: Curves.easeOutCubic,
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? accentColor.withValues(alpha: 0.15)
-              : Colors.white.withValues(alpha: 0.03),
-          borderRadius: BorderRadius.circular(16),
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : AppColors.textPrimary.withValues(alpha: 0.03),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected 
-                ? accentColor.withValues(alpha: 0.5)
+            color: isSelected
+                ? AppColors.primary.withValues(alpha: 0.4)
                 : Colors.transparent,
             width: 1.5,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: accentColor.withValues(alpha: 0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ] : [],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            // â”€â”€â”€ Backdrop blur: sigma 12 (was 15) â”€â”€â”€
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(14.0),
               child: Row(
                 children: [
-                  // Icon
+                  // â”€â”€â”€ Icon: 18px, circle, padding:10 â”€â”€â”€
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: isSelected ? accentColor.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05),
+                      color: isSelected
+                          ? AppColors.primary.withValues(alpha: 0.2)
+                          : AppColors.textPrimary.withValues(alpha: 0.05),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      Icons.tv_rounded, 
-                      color: isSelected ? accentColor : Colors.white54,
-                      size: 20,
+                      Icons.tv_rounded,
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.white54,
+                      size: 18,
                     ),
                   ),
                   const SizedBox(width: 16),
-                  // Category Info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // â”€â”€â”€ name: 16px â”€â”€â”€
                         Text(
                           category.name,
                           style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: AppColors.textPrimary,
+                            fontSize: 16,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                             letterSpacing: -0.3,
                           ),
                         ),
                         const SizedBox(height: 4),
+                        // â”€â”€â”€ count: 12px â”€â”€â”€
                         Text(
                           '${category.channels.length} Channels',
                           style: GoogleFonts.inter(
-                            color: isSelected ? Colors.white.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.4),
-                            fontSize: 13,
+                            color: isSelected
+                                ? AppColors.textPrimary
+                                    .withValues(alpha: 0.8)
+                                : AppColors.textPrimary
+                                    .withValues(alpha: 0.4),
+                            fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  
-                  // Right Action Icon
                   if (isSelected)
                     Icon(
                       Icons.arrow_forward_ios_rounded,
-                      color: accentColor,
+                      color: AppColors.primary,
                       size: 18,
-                    )
+                    ),
                 ],
               ),
             ),
@@ -595,7 +648,9 @@ class _MinimalistCategoryTile extends StatelessWidget {
   }
 }
 
-// ─── Mock Data ───
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+//  Mock Data
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 
 class _Channel {
   final String id;
@@ -603,10 +658,10 @@ class _Channel {
   final String logo;
   final String videoUrl;
   final String nowPlaying;
-  
+
   _Channel({
-    required this.id, 
-    required this.name, 
+    required this.id,
+    required this.name,
     required this.logo,
     required this.videoUrl,
     required this.nowPlaying,
@@ -618,7 +673,7 @@ class _Category {
   final String name;
   final String logo;
   final List<_Channel> channels;
-  
+
   _Category({
     required this.id,
     required this.name,
@@ -632,20 +687,24 @@ class _MockEpgData {
     _Category(
       id: 'cat_sky',
       name: 'Sky Sports',
-      logo: 'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/kodi.png',
+      logo:
+          'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/kodi.png',
       channels: [
         _Channel(
           id: 'sky1',
           name: 'Main Event',
-          logo: 'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/kodi.png',
+          logo:
+              'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/kodi.png',
           videoUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
           nowPlaying: 'Arsenal vs Chelsea',
         ),
         _Channel(
           id: 'sky2',
           name: 'Premier League',
-          logo: 'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/kodi.png',
-          videoUrl: 'https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8',
+          logo:
+              'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/kodi.png',
+          videoUrl:
+              'https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8',
           nowPlaying: 'Match Analysis',
         ),
       ],
@@ -653,13 +712,16 @@ class _MockEpgData {
     _Category(
       id: 'cat_bein',
       name: 'beIN Sports',
-      logo: 'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/twitch.png',
+      logo:
+          'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/twitch.png',
       channels: [
         _Channel(
           id: 'bein1',
           name: 'beIN 1',
-          logo: 'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/twitch.png',
-          videoUrl: 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
+          logo:
+              'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/twitch.png',
+          videoUrl:
+              'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
           nowPlaying: 'UCL Final',
         ),
       ],
@@ -667,13 +729,16 @@ class _MockEpgData {
     _Category(
       id: 'cat_hbo',
       name: 'Cinema',
-      logo: 'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/hbo.png',
+      logo:
+          'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/hbo.png',
       channels: [
         _Channel(
           id: 'hbo1',
           name: 'HBO Max',
-          logo: 'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/hbo.png',
-          videoUrl: 'https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8',
+          logo:
+              'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/hbo.png',
+          videoUrl:
+              'https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8',
           nowPlaying: 'House of the Dragon',
         ),
       ],
@@ -681,6 +746,7 @@ class _MockEpgData {
   ];
 }
 
+// â”€â”€â”€ Fullscreen Player â”€â”€â”€
 class _LiveFullscreenPlayer extends StatefulWidget {
   final VideoPlayerController controller;
 
@@ -730,7 +796,8 @@ class _LiveFullscreenPlayerState extends State<_LiveFullscreenPlayer> {
                   color: Colors.black.withValues(alpha: 0.4),
                   shape: const CircleBorder(),
                   child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                    icon: const Icon(Icons.close,
+                        color: AppColors.textPrimary, size: 28),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
