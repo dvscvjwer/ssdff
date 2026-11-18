@@ -9,6 +9,7 @@ import '../l10n/app_localizations.dart';
 import '../models/title.dart';
 import '../theme/app_theme.dart';
 import '../widgets/title_card.dart';
+import 'detail_screen.dart';
 
 // ─── Screen ──────────────────────────────────────────────────
 class SearchScreen extends StatefulWidget {
@@ -18,10 +19,16 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen>
-    with TickerProviderStateMixin {
+class _SearchScreenState extends State<SearchScreen> {
+  final TextEditingController _controller = TextEditingController();
   String _query = '';
   final _recent = <String>['summer', 'thriller', 'sci-fi', 'family night'];
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   List<TitleItem> get _results {
     if (_query.trim().isEmpty) return [];
@@ -45,25 +52,46 @@ class _SearchScreenState extends State<SearchScreen>
         title: Padding(
           padding: const EdgeInsetsDirectional.only(end: 8),
           child: TextField(
+            controller: _controller,
             autofocus: true,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 15,
+            ),
             decoration: InputDecoration(
               hintText: s.searchHint,
               hintStyle: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
-                color: Color(0xFF555555),
+                color: AppColors.textTertiary,
               ),
-              prefixIcon:
-                  const Icon(Icons.search, color: AppColors.textSecondary),
+              prefixIcon: const Icon(
+                Icons.search,
+                color: AppColors.textSecondary,
+              ),
+              suffixIcon: _query.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: AppColors.textSecondary,
+                      ),
+                      onPressed: () {
+                        _controller.clear();
+                        setState(() => _query = '');
+                      },
+                    )
+                  : null,
               filled: true,
-              fillColor: const Color(0xFF1A1A1A),
+              fillColor: AppColors.surfaceAlt,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+                borderSide:
+                    const BorderSide(color: AppColors.divider, width: 0.5),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -92,44 +120,54 @@ class _SearchScreenState extends State<SearchScreen>
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       children: [
-        // ─ Section: Recent ─
-        Text(
-          s.searchRecent,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+        if (_recent.isNotEmpty) ...[
+          // ─ Section: Recent ─
+          Text(
+            s.searchRecent,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final r in _recent)
-              Chip(
-                label: Text(r),
-                backgroundColor: const Color(0xFF1A1A1A),
-                labelStyle: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: const BorderSide(
-                    color: Color(0x1AFFFFFF),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final r in _recent)
+                InputChip(
+                  label: Text(r),
+                  backgroundColor: AppColors.surfaceAlt,
+                  labelStyle: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: const BorderSide(
+                      color: AppColors.glassSurface,
+                      width: 0.5,
+                    ),
+                  ),
+                  deleteIcon: const Icon(Icons.close, size: 14),
+                  deleteIconColor: AppColors.textTertiary,
+                  onPressed: () {
+                    _controller.text = r;
+                    _controller.selection = TextSelection.fromPosition(
+                      TextPosition(offset: r.length),
+                    );
+                    setState(() => _query = r);
+                  },
+                  onDeleted: () {
+                    setState(() => _recent.remove(r));
+                  },
                 ),
-                deleteIcon: const Icon(Icons.close, size: 14),
-                deleteIconColor: AppColors.textTertiary,
-                onDeleted: () {
-                  setState(() => _recent.remove(r));
-                },
-              ),
-          ],
-        ),
-        const SizedBox(height: 28),
+            ],
+          ),
+          const SizedBox(height: 28),
+        ],
 
         // ─ Section: Trending ─
         Text(
@@ -156,8 +194,11 @@ class _SearchScreenState extends State<SearchScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.search_off,
-                size: 56, color: AppColors.textTertiary),
+            const Icon(
+              Icons.search_off,
+              size: 56,
+              color: AppColors.textTertiary,
+            ),
             const SizedBox(height: 16),
             Text(
               s.searchEmptyTitle,
@@ -170,6 +211,7 @@ class _SearchScreenState extends State<SearchScreen>
             const SizedBox(height: 6),
             Text(
               s.searchEmptyHint,
+              textAlign: TextAlign.center,
               style: const TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 14,
@@ -192,7 +234,7 @@ class _ResultsGrid extends StatefulWidget {
 }
 
 class _ResultsGridState extends State<_ResultsGrid>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late final AnimationController _staggerController;
 
   @override
@@ -200,8 +242,7 @@ class _ResultsGridState extends State<_ResultsGrid>
     super.initState();
     _staggerController = AnimationController(
       vsync: this,
-      duration: Duration(
-          milliseconds: 300 + widget.results.length * 100),
+      duration: Duration(milliseconds: 300 + widget.results.length * 80),
     )..forward();
   }
 
@@ -211,8 +252,7 @@ class _ResultsGridState extends State<_ResultsGrid>
     if (old.results.length != widget.results.length) {
       _staggerController
         ..reset()
-        ..duration = Duration(
-            milliseconds: 300 + widget.results.length * 100)
+        ..duration = Duration(milliseconds: 300 + widget.results.length * 80)
         ..forward();
     }
   }
@@ -225,6 +265,7 @@ class _ResultsGridState extends State<_ResultsGrid>
 
   @override
   Widget build(BuildContext context) {
+    final totalMs = 300 + widget.results.length * 80;
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -235,21 +276,21 @@ class _ResultsGridState extends State<_ResultsGrid>
       ),
       itemCount: widget.results.length,
       itemBuilder: (_, i) {
-        final total = widget.results.length;
-        final start = (i * 100) /
-            (300 + total * 100);
-        final end = (i * 100 + 300) /
-            (300 + total * 100);
-        final anim = CurvedAnimation(
-          parent: _staggerController,
-          curve: Interval(
-            start.clamp(0.0, 1.0),
-            end.clamp(0.0, 1.0),
-            curve: Curves.easeOut,
-          ),
-        );
-        return FadeTransition(
-          opacity: anim,
+        final start = ((i * 80) / totalMs).clamp(0.0, 1.0);
+        final end = ((i * 80 + 300) / totalMs).clamp(0.0, 1.0);
+        final interval = Interval(start, end, curve: Curves.easeOutCubic);
+        return AnimatedBuilder(
+          animation: _staggerController,
+          builder: (_, child) {
+            final t = interval.transform(_staggerController.value);
+            return Opacity(
+              opacity: t,
+              child: Transform.scale(
+                scale: 0.95 + 0.05 * t,
+                child: child,
+              ),
+            );
+          },
           child: TitleCard(
             title: widget.results[i],
             width: 120,
@@ -271,6 +312,13 @@ class _TrendingTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => DetailScreen(title: title),
+          ),
+        );
+      },
       leading: SizedBox(
         width: 28,
         child: Text(
@@ -279,7 +327,7 @@ class _TrendingTile extends StatelessWidget {
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w900,
-            color: index <= 3 ? AppColors.primary : const Color(0xFF555555),
+            color: index <= 3 ? AppColors.primary : AppColors.textTertiary,
           ),
         ),
       ),
