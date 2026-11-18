@@ -1,3 +1,7 @@
+// ─────────────────────────────────────────────────────────────
+//  browse_screen.dart — SkyLive Redesign
+// ─────────────────────────────────────────────────────────────
+
 import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
@@ -8,6 +12,7 @@ import '../widgets/title_card.dart';
 import '../widgets/title_row.dart';
 import 'search_screen.dart';
 
+// ─── Screen ──────────────────────────────────────────────────
 class BrowseScreen extends StatefulWidget {
   final TitleKind kind;
   const BrowseScreen({
@@ -73,13 +78,17 @@ class _BrowseScreenState extends State<BrowseScreen> {
     final items = _filtered;
     return CustomScrollView(
       slivers: [
+        // ─── App Bar ───
         SliverAppBar(
           pinned: true,
           floating: true,
           backgroundColor: AppColors.background.withValues(alpha: 0.9),
           title: Text(
             _heading(context),
-            style: const TextStyle(fontWeight: FontWeight.w700),
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
           actions: [
             IconButton(
@@ -88,11 +97,14 @@ class _BrowseScreenState extends State<BrowseScreen> {
                   builder: (_) => const SearchScreen(),
                 ),
               ),
-              icon: const Icon(Icons.search),
+              icon: const Icon(Icons.search, color: AppColors.textPrimary),
             ),
           ],
         ),
-        SliverToBoxAdapter(child: _FilterBar(
+
+        // ─── Filter Bar ───
+        SliverToBoxAdapter(
+            child: _FilterBar(
           genre: _genre,
           region: _region,
           year: _year,
@@ -104,6 +116,8 @@ class _BrowseScreenState extends State<BrowseScreen> {
           kind: widget.kind,
         )),
         const SliverToBoxAdapter(child: SizedBox(height: 12)),
+
+        // ─── Kids or Collections ───
         if (widget.kind == TitleKind.kids)
           SliverToBoxAdapter(child: _KidsTopicStrip())
         else
@@ -112,22 +126,22 @@ class _BrowseScreenState extends State<BrowseScreen> {
             separatorBuilder: (_, __) => const SizedBox(height: 18),
             itemBuilder: (_, i) => TitleRow(collection: _collections[i]),
           ),
+
+        // ─── All Titles Grid ───
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
             child: Text(
               AppLocalizations.of(context).rowAllTitles,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-              ),
+              style: AppTextStyles.sectionTitle.copyWith(fontSize: 17),
             ),
           ),
         ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
           sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               crossAxisSpacing: 8,
               mainAxisSpacing: 12,
@@ -148,6 +162,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
   }
 }
 
+// ─── Filter Bar ──────────────────────────────────────────────
 class _FilterBar extends StatelessWidget {
   final String genre;
   final String region;
@@ -181,18 +196,22 @@ class _FilterBar extends StatelessWidget {
           children: [
             _FilterChip(
               label: genre == 'All' ? s.browseGenre : genre,
+              isActive: genre != 'All',
               onTap: () => _pickGenre(context),
             ),
             _FilterChip(
               label: region == 'All' ? s.browseRegion : region,
+              isActive: region != 'All',
               onTap: () => _pickRegion(context),
             ),
             _FilterChip(
               label: year == null ? s.browseYear : '$year',
+              isActive: year != null,
               onTap: () => _pickYear(context),
             ),
             _FilterChip(
               label: _sortLabel(context, sort),
+              isActive: sort != _SortKey.newest,
               onTap: () => _pickSort(context),
             ),
           ],
@@ -259,10 +278,9 @@ class _FilterBar extends StatelessWidget {
   }) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.surfaceModal,
       shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(18)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
       builder: (ctx) => SafeArea(
         child: Column(
@@ -284,6 +302,7 @@ class _FilterBar extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
@@ -298,13 +317,16 @@ class _FilterBar extends StatelessWidget {
                     title: Text(
                       labelOf(v),
                       style: TextStyle(
-                        color: isSel ? AppColors.primary : Colors.white,
+                        color: isSel
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
                         fontWeight:
                             isSel ? FontWeight.w700 : FontWeight.w400,
                       ),
                     ),
                     trailing: isSel
-                        ? const Icon(Icons.check, color: AppColors.primary)
+                        ? const Icon(Icons.check,
+                            color: AppColors.primary)
                         : null,
                     onTap: () {
                       onPick(v);
@@ -321,10 +343,16 @@ class _FilterBar extends StatelessWidget {
   }
 }
 
+// ─── Filter Chip ─────────────────────────────────────────────
 class _FilterChip extends StatelessWidget {
   final String label;
+  final bool isActive;
   final VoidCallback onTap;
-  const _FilterChip({required this.label, required this.onTap});
+  const _FilterChip({
+    required this.label,
+    this.isActive = false,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -337,25 +365,36 @@ class _FilterChip extends StatelessWidget {
           padding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.surfaceAlt,
+            color: isActive
+                ? const Color(0x1AE50914)
+                : AppColors.surfaceAlt,
             borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isActive
+                  ? const Color(0x66E50914)
+                  : Colors.transparent,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
+                style: TextStyle(
+                  color: isActive
+                      ? AppColors.primary
+                      : AppColors.textPrimary,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(
+              Icon(
                 Icons.keyboard_arrow_down,
                 size: 16,
-                color: AppColors.textSecondary,
+                color: isActive
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
               ),
             ],
           ),
@@ -365,6 +404,7 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+// ─── Kids Topic Strip ────────────────────────────────────────
 class _KidsTopicStrip extends StatelessWidget {
   static const _topicGradients = [
     [Color(0xFFE74C3C), Color(0xFFFF8A65)],
@@ -410,11 +450,18 @@ class _KidsTopicStrip extends StatelessWidget {
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: t.$2.first.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Text(
                 t.$1,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textPrimary,
                   fontWeight: FontWeight.w800,
                   fontSize: 16,
                 ),
