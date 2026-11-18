@@ -1844,3 +1844,407 @@ class FloatingUnmutePill extends StatelessWidget {
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  5. LiveMatchScorebugCard & CompactMatchRibbon (Apple Sports + TOD 360)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class LiveMatchScorebugCard extends StatelessWidget {
+  final LiveMatchInfo match;
+  final Animation<double> pulseAnimation;
+
+  const LiveMatchScorebugCard({
+    super.key,
+    required this.match,
+    required this.pulseAnimation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool ar = LiveBroadcastType.isAr(context);
+    final int awayPossession = 100 - match.homePossession;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: AlignmentDirectional.centerStart,
+          end: AlignmentDirectional.centerEnd,
+          colors: <Color>[
+            match.homeColor.withValues(alpha: 0.20),
+            AppColors.surfaceCard,
+            match.awayColor.withValues(alpha: 0.20),
+          ],
+        ),
+        borderRadius: const BorderRadius.all(Radius.circular(16)),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.16),
+          width: 1.0,
+        ),
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const Icon(
+                Icons.emoji_events_rounded,
+                size: 15,
+                color: AppColors.gold,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${match.competition(ar)}  •  ${match.stage(ar)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LiveBroadcastType.style(
+                    context,
+                    size: 12,
+                    weight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              AnimatedBuilder(
+                animation: pulseAnimation,
+                builder: (BuildContext context, _) {
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00E676).withValues(alpha: 0.14),
+                      borderRadius: const BorderRadius.all(Radius.circular(20)),
+                      border: Border.all(
+                        color: const Color(0xFF00E676).withValues(
+                          alpha: 0.45 + 0.35 * pulseAnimation.value,
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFF00E676).withValues(
+                              alpha: 0.55 + 0.45 * pulseAnimation.value,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          match.minuteLabel,
+                          style: LiveBroadcastType.style(
+                            context,
+                            size: 11.5,
+                            weight: FontWeight.w800,
+                            color: const Color(0xFF00E676),
+                            tabular: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Row(
+                  children: <Widget>[
+                    _ClubShieldBadge(
+                      code: match.homeShort,
+                      color: match.homeColor,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        match.homeTeam(ar),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LiveBroadcastType.style(
+                          context,
+                          size: 15,
+                          weight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xB3050505),
+                  borderRadius: const BorderRadius.all(Radius.circular(14)),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: Text(
+                  '${match.homeScore}  -  ${match.awayScore}',
+                  style: LiveBroadcastType.style(
+                    context,
+                    size: 24,
+                    weight: FontWeight.w900,
+                    display: true,
+                    tabular: true,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        match.awayTeam(ar),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                        style: LiveBroadcastType.style(
+                          context,
+                          size: 15,
+                          weight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    _ClubShieldBadge(
+                      code: match.awayShort,
+                      color: match.awayColor,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Text(
+                '${match.homePossession}%',
+                style: LiveBroadcastType.style(
+                  context,
+                  size: 11.5,
+                  weight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  tabular: true,
+                ),
+              ),
+              Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Text(
+                    ar
+                        ? 'الاستحواذ  •  التسديدات على المرمى (${match.homeShotsOnTarget} - ${match.awayShotsOnTarget})'
+                        : 'Possession  •  Shots on Target (${match.homeShotsOnTarget} - ${match.awayShotsOnTarget})',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LiveBroadcastType.style(
+                      context,
+                      size: 11,
+                      weight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                      tabular: true,
+                    ),
+                  ),
+                ),
+              ),
+              Text(
+                '$awayPossession%',
+                style: LiveBroadcastType.style(
+                  context,
+                  size: 11.5,
+                  weight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  tabular: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: const BorderRadius.all(Radius.circular(4)),
+            child: SizedBox(
+              height: 6,
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    flex: match.homePossession,
+                    child: Container(color: match.homeColor),
+                  ),
+                  const SizedBox(width: 2),
+                  Expanded(
+                    flex: awayPossession,
+                    child: Container(color: match.awayColor),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.35),
+              borderRadius: const BorderRadius.all(Radius.circular(8)),
+            ),
+            child: Text(
+              match.events(ar),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: LiveBroadcastType.style(
+                context,
+                size: 11,
+                weight: FontWeight.w500,
+                color: AppColors.textSecondary,
+                tabular: true,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ClubShieldBadge extends StatelessWidget {
+  final String code;
+  final Color color;
+
+  const _ClubShieldBadge({
+    required this.code,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[color, color.withValues(alpha: 0.55)],
+        ),
+        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        code,
+        style: GoogleFonts.outfit(
+          color: Colors.white,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.4,
+        ),
+      ),
+    );
+  }
+}
+
+class CompactMatchRibbon extends StatelessWidget {
+  final LiveMatchInfo match;
+  final Animation<double> pulseAnimation;
+  final VoidCallback onTap;
+
+  const CompactMatchRibbon({
+    super.key,
+    required this.match,
+    required this.pulseAnimation,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool ar = LiveBroadcastType.isAr(context);
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 8, 14, 2),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
+        child: Container(
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: AlignmentDirectional.centerStart,
+              end: AlignmentDirectional.centerEnd,
+              colors: <Color>[
+                match.homeColor.withValues(alpha: 0.22),
+                AppColors.surfaceCard,
+                match.awayColor.withValues(alpha: 0.22),
+              ],
+            ),
+            borderRadius: const BorderRadius.all(Radius.circular(12)),
+            border: Border.all(color: AppColors.cardBorder),
+          ),
+          child: Row(
+            children: <Widget>[
+              AnimatedBuilder(
+                animation: pulseAnimation,
+                builder: (BuildContext context, _) {
+                  return Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF00E676).withValues(
+                        alpha: 0.5 + 0.5 * pulseAnimation.value,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${match.competition(ar)}  |  ${match.homeTeam(ar)} ${match.homeScore} - ${match.awayScore} ${match.awayTeam(ar)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LiveBroadcastType.style(
+                    context,
+                    size: 12,
+                    weight: FontWeight.w700,
+                    tabular: true,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                match.minuteLabel,
+                style: LiveBroadcastType.style(
+                  context,
+                  size: 11.5,
+                  weight: FontWeight.w800,
+                  color: const Color(0xFF00E676),
+                  tabular: true,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                ar ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
