@@ -1541,6 +1541,7 @@ class _CinemaChannelCardState extends State<CinemaChannelCard> {
   @override
   Widget build(BuildContext context) {
     final bool ar = LiveBroadcastType.isAr(context);
+    final bool compactCard = widget.height < 108;
     final EpgSlot slot = widget.channel.buildSchedule(widget.now).first;
     final double progress = slot.progressAt(widget.now);
     final LiveMatchInfo? match = widget.channel.liveMatch;
@@ -1561,6 +1562,7 @@ class _CinemaChannelCardState extends State<CinemaChannelCard> {
         onTapUp: (_) => setState(() => _isPressed = false),
         onTapCancel: () => setState(() => _isPressed = false),
         onTap: widget.onTap,
+        onLongPress: widget.onToggleFavorite,
         child: AnimatedScale(
           scale: _cardScale,
           duration: AppDurations.normal,
@@ -1642,11 +1644,11 @@ class _CinemaChannelCardState extends State<CinemaChannelCard> {
                       color: Colors.white.withValues(alpha: 0.04),
                     ),
                   Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(
+                    padding: EdgeInsetsDirectional.fromSTEB(
                       12,
-                      10,
+                      compactCard ? 7 : 10,
                       12,
-                      10,
+                      compactCard ? 7 : 10,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1689,8 +1691,8 @@ class _CinemaChannelCardState extends State<CinemaChannelCard> {
                             const SizedBox(width: 8),
                             NetworkEmblem(
                               channel: widget.channel,
-                              size: 28,
-                              borderRadius: 7,
+                              size: compactCard ? 24 : 28,
+                              borderRadius: compactCard ? 6 : 7,
                             ),
                           ],
                         ),
@@ -1709,7 +1711,7 @@ class _CinemaChannelCardState extends State<CinemaChannelCard> {
                                     overflow: TextOverflow.ellipsis,
                                     style: LiveBroadcastType.style(
                                       context,
-                                      size: 13.5,
+                                      size: compactCard ? 12.5 : 13.5,
                                       weight: FontWeight.w800,
                                       color: Colors.white,
                                       height: 1.18,
@@ -2662,173 +2664,207 @@ class QualityPickerSheet extends StatelessWidget {
         badge: 'HD',
       ),
     ];
-    return Container(
-      decoration: BoxDecoration(
-        color: LiveLuxuryPalette.smokedPanel,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        border: Border.all(
-          color: LiveLuxuryPalette.hairlineSubtle,
-          width: 0.6,
+    final double maxSheetHeight = MediaQuery.sizeOf(context).height * 0.82;
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 520,
+          maxHeight: maxSheetHeight,
         ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 3.5,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.16),
-                    borderRadius: const BorderRadius.all(Radius.circular(2)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
+        child: Container(
+          decoration: BoxDecoration(
+            color: LiveLuxuryPalette.smokedPanel,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            border: Border.all(
+              color: LiveLuxuryPalette.hairlineSubtle,
+              width: 0.6,
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  const Icon(
-                    Icons.tune_rounded,
-                    color: LiveLuxuryPalette.silverSecondary,
-                    size: 19,
-                  ),
-                  const SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      l10n?.playerQuality ??
-                          (ar ? 'جودة البث المباشر' : 'Stream Quality'),
-                      style: LiveBroadcastType.style(
-                        context,
-                        size: 16.5,
-                        weight: FontWeight.w700,
-                        color: Colors.white,
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 3.5,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.16),
+                        borderRadius: const BorderRadius.all(Radius.circular(2)),
                       ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      size: 20,
-                      color: LiveLuxuryPalette.silverMuted,
+                  const SizedBox(height: 16),
+                  Row(
+                    children: <Widget>[
+                      const Icon(
+                        Icons.tune_rounded,
+                        color: LiveLuxuryPalette.silverSecondary,
+                        size: 19,
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Text(
+                          l10n?.playerQuality ??
+                              (ar ? 'جودة البث المباشر' : 'Stream Quality'),
+                          style: LiveBroadcastType.style(
+                            context,
+                            size: 16.5,
+                            weight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 20,
+                          color: LiveLuxuryPalette.silverMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          for (final opt in options)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    onSelect(opt.id);
+                                    Navigator.of(context).pop();
+                                  },
+                                  borderRadius: const BorderRadius.all(
+                                    Radius.circular(14),
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: selectedQuality == opt.id
+                                          ? LiveLuxuryPalette.salonTileActive
+                                          : LiveLuxuryPalette.obsidianCard,
+                                      borderRadius: const BorderRadius.all(
+                                        Radius.circular(14),
+                                      ),
+                                      border: Border.all(
+                                        color: selectedQuality == opt.id
+                                            ? LiveLuxuryPalette.crimsonActiveRim
+                                                .withValues(alpha: 0.55)
+                                            : LiveLuxuryPalette.hairlineSubtle,
+                                        width:
+                                            selectedQuality == opt.id ? 1.0 : 0.5,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: <Widget>[
+                                        Container(
+                                          width: 48,
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 5,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: LiveLuxuryPalette.mutedPill,
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                              Radius.circular(8),
+                                            ),
+                                            border: Border.all(
+                                              color: LiveLuxuryPalette
+                                                  .hairlineSubtle,
+                                              width: 0.5,
+                                            ),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            opt.badge,
+                                            style: GoogleFonts.outfit(
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: 0.4,
+                                              color: opt.id == '4K HDR'
+                                                  ? LiveLuxuryPalette
+                                                      .champagneSoft
+                                                  : const Color(0xFFD0D0DA),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: <Widget>[
+                                              Text(
+                                                opt.title,
+                                                style: LiveBroadcastType.style(
+                                                  context,
+                                                  size: 13.5,
+                                                  weight: FontWeight.w700,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                opt.sub,
+                                                style: LiveBroadcastType.style(
+                                                  context,
+                                                  size: 11.5,
+                                                  weight: FontWeight.w400,
+                                                  color: LiveLuxuryPalette
+                                                      .silverSecondary,
+                                                  tabular: true,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (selectedQuality == opt.id)
+                                          Container(
+                                            width: 20,
+                                            height: 20,
+                                            decoration: const BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: LiveLuxuryPalette
+                                                  .crimsonActiveRim,
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: const Icon(
+                                              Icons.check_rounded,
+                                              color: Colors.white,
+                                              size: 13,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              for (final opt in options)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        onSelect(opt.id);
-                        Navigator.of(context).pop();
-                      },
-                      borderRadius: const BorderRadius.all(Radius.circular(14)),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: selectedQuality == opt.id
-                              ? LiveLuxuryPalette.salonTileActive
-                              : LiveLuxuryPalette.obsidianCard,
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(14)),
-                          border: Border.all(
-                            color: selectedQuality == opt.id
-                                ? LiveLuxuryPalette.crimsonActiveRim
-                                    .withValues(alpha: 0.55)
-                                : LiveLuxuryPalette.hairlineSubtle,
-                            width: selectedQuality == opt.id ? 1.0 : 0.5,
-                          ),
-                        ),
-                        child: Row(
-                          children: <Widget>[
-                            Container(
-                              width: 48,
-                              padding: const EdgeInsets.symmetric(vertical: 5),
-                              decoration: BoxDecoration(
-                                color: LiveLuxuryPalette.mutedPill,
-                                borderRadius:
-                                    const BorderRadius.all(Radius.circular(8)),
-                                border: Border.all(
-                                  color: LiveLuxuryPalette.hairlineSubtle,
-                                  width: 0.5,
-                                ),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                opt.badge,
-                                style: GoogleFonts.outfit(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.4,
-                                  color: opt.id == '4K HDR'
-                                      ? LiveLuxuryPalette.champagneSoft
-                                      : const Color(0xFFD0D0DA),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    opt.title,
-                                    style: LiveBroadcastType.style(
-                                      context,
-                                      size: 13.5,
-                                      weight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    opt.sub,
-                                    style: LiveBroadcastType.style(
-                                      context,
-                                      size: 11.5,
-                                      weight: FontWeight.w400,
-                                      color: LiveLuxuryPalette.silverSecondary,
-                                      tabular: true,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (selectedQuality == opt.id)
-                              Container(
-                                width: 20,
-                                height: 20,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: LiveLuxuryPalette.crimsonActiveRim,
-                                ),
-                                alignment: Alignment.center,
-                                child: const Icon(
-                                  Icons.check_rounded,
-                                  color: Colors.white,
-                                  size: 13,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
+            ),
           ),
         ),
       ),
