@@ -166,23 +166,17 @@ class _DownloadsListState extends State<_DownloadsList>
 
   Widget _animatedTile(BuildContext context, TitleItem t, int i) {
     final totalDuration = 400 + widget.items.length * 60;
-    final start = (i * 60) / totalDuration;
-    final end = (i * 60 + 400) / totalDuration;
-    final anim = CurvedAnimation(
-      parent: _staggerController,
-      curve: Interval(
-        start.clamp(0.0, 1.0),
-        end.clamp(0.0, 1.0),
-        curve: Curves.easeOutCubic,
-      ),
-    );
+    final start = ((i * 60) / totalDuration).clamp(0.0, 1.0);
+    final end = ((i * 60 + 400) / totalDuration).clamp(0.0, 1.0);
+    final interval = Interval(start, end, curve: Curves.easeOutCubic);
     return AnimatedBuilder(
-      animation: anim,
+      animation: _staggerController,
       builder: (_, child) {
+        final v = interval.transform(_staggerController.value);
         return Opacity(
-          opacity: anim.value,
+          opacity: v,
           child: Transform.translate(
-            offset: Offset(30 * (1 - anim.value), 0),
+            offset: Offset(30 * (1 - v), 0),
             child: child,
           ),
         );
