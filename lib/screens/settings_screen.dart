@@ -1,8 +1,14 @@
+// ─────────────────────────────────────────────────────────────
+//  settings_screen.dart — SkyLive Redesign
+// ─────────────────────────────────────────────────────────────
+
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../services/user_state.dart';
+import '../theme/app_theme.dart';
 
+// ─── Screen ──────────────────────────────────────────────────
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -19,20 +25,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final s = AppLocalizations.of(context);
     return Scaffold(
-      backgroundColor: Colors.black, // Pure OLED Black
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: AppColors.background,
         elevation: 0,
         title: Text(
           s.settingsTitle,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: ListView(
         children: [
@@ -46,21 +52,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: _dataSaver,
             onChanged: (v) => setState(() => _dataSaver = v),
           ),
-          _MinimalDivider(),
+          const _MinimalDivider(),
           _MinimalToggleTile(
             icon: Icons.auto_awesome_rounded,
             label: s.settingsAutoplayNext,
             value: _autoplayNext,
             onChanged: (v) => setState(() => _autoplayNext = v),
           ),
-          _MinimalDivider(),
+          const _MinimalDivider(),
           _MinimalToggleTile(
             icon: Icons.preview_rounded,
             label: s.settingsAutoplayPreviews,
             value: _autoplayPreviews,
             onChanged: (v) => setState(() => _autoplayPreviews = v),
           ),
-          _SectionFooter(),
+          const _SectionFooter(),
 
           // ─── Storage & Downloads ───
           _SectionHeader(title: s.settingsGroupDownloads),
@@ -70,16 +76,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: s.settingsDownloadLocationValue,
             onTap: () => _toast(s.snackComingSoon),
           ),
-          _MinimalDivider(),
+          const _MinimalDivider(),
           _MinimalTile(
             icon: Icons.cleaning_services_rounded,
             label: s.settingsClearDownloads,
-            textColor: const Color(0xFFE50914),
-            iconColor: const Color(0xFFE50914),
+            textColor: AppColors.primary,
+            iconColor: AppColors.primary,
             showArrow: false,
             onTap: _clearDownloads,
           ),
-          _SectionFooter(),
+          const _SectionFooter(),
 
           // ─── App Configuration ───
           _SectionHeader(title: s.settingsGroupApp),
@@ -88,26 +94,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             label: s.menuNotifications,
             onTap: () => _toast(s.snackComingSoon),
           ),
-          _MinimalDivider(),
+          const _MinimalDivider(),
           _MinimalTile(
             icon: Icons.family_restroom_rounded,
             label: s.menuParental,
             onTap: () => _toast(s.snackComingSoon),
           ),
-          _MinimalDivider(),
+          const _MinimalDivider(),
           _MinimalTile(
             icon: Icons.devices_other_rounded,
             label: s.settingsManageDevices,
             onTap: () => _toast(s.snackComingSoon),
           ),
-          _MinimalDivider(),
+          const _MinimalDivider(),
           _MinimalTile(
             icon: Icons.delete_sweep_rounded,
             label: s.settingsClearCache,
             subtitle: s.settingsCacheSize(48),
             onTap: () => _toast(s.snackSettingsSaved),
           ),
-          _MinimalDivider(),
+          const _MinimalDivider(),
           _MinimalTile(
             icon: Icons.info_outline_rounded,
             label: s.settingsAboutApp,
@@ -119,7 +125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               applicationLegalese: '© 2026 Sky Live',
             ),
           ),
-          
+
           const SizedBox(height: 40),
         ],
       ),
@@ -129,8 +135,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _toast(String text) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(text, style: const TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF333333),
+        content:
+            Text(text, style: const TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: AppColors.surfaceHigh,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -146,17 +153,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF141414),
-        title: Text(s.downloadsClearTitle, style: const TextStyle(color: Colors.white)),
-        content: Text(s.downloadsClearMessage, style: const TextStyle(color: Colors.white70)),
+        backgroundColor: AppColors.surfaceModal,
+        title: Text(s.downloadsClearTitle,
+            style: const TextStyle(color: AppColors.textPrimary)),
+        content: Text(s.downloadsClearMessage,
+            style: const TextStyle(color: AppColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(s.dialogCancel, style: const TextStyle(color: Colors.white54)),
+            child: Text(s.dialogCancel,
+                style: const TextStyle(color: AppColors.textTertiary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(s.dialogConfirm, style: const TextStyle(color: Color(0xFFE50914))),
+            child: Text(s.dialogConfirm,
+                style: const TextStyle(color: AppColors.primary)),
           ),
         ],
       ),
@@ -170,9 +181,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-// ─────────────────────────────────────────
-// UI Components
-// ─────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+//  UI Components
+// ─────────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
   final String title;
@@ -182,11 +193,12 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 8, top: 10),
+      padding:
+          const EdgeInsets.only(left: 20, right: 20, bottom: 8, top: 10),
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.5),
+          color: AppColors.textPrimary.withValues(alpha: 0.5),
           fontSize: 13,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
@@ -197,6 +209,8 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _SectionFooter extends StatelessWidget {
+  const _SectionFooter();
+
   @override
   Widget build(BuildContext context) {
     return const SizedBox(height: 32);
@@ -204,13 +218,15 @@ class _SectionFooter extends StatelessWidget {
 }
 
 class _MinimalDivider extends StatelessWidget {
+  const _MinimalDivider();
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 64),
       child: Container(
         height: 1,
-        color: Colors.white.withValues(alpha: 0.08),
+        color: AppColors.divider,
       ),
     );
   }
@@ -244,8 +260,9 @@ class _MinimalTileState extends State<_MinimalTile> {
 
   @override
   Widget build(BuildContext context) {
-    final iColor = widget.iconColor ?? Colors.white.withValues(alpha: 0.6);
-    final tColor = widget.textColor ?? Colors.white;
+    final iColor =
+        widget.iconColor ?? AppColors.textPrimary.withValues(alpha: 0.6);
+    final tColor = widget.textColor ?? AppColors.textPrimary;
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
@@ -254,8 +271,11 @@ class _MinimalTileState extends State<_MinimalTile> {
       onTap: widget.onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
-        color: _pressed ? Colors.white.withValues(alpha: 0.05) : Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        color: _pressed
+            ? AppColors.textPrimary.withValues(alpha: 0.05)
+            : Colors.transparent,
+        padding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         child: Row(
           children: [
             Icon(widget.icon, size: 24, color: iColor),
@@ -274,7 +294,7 @@ class _MinimalTileState extends State<_MinimalTile> {
               Text(
                 widget.subtitle!,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: AppColors.textPrimary.withValues(alpha: 0.5),
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
                 ),
@@ -282,7 +302,9 @@ class _MinimalTileState extends State<_MinimalTile> {
             if (widget.subtitle != null && widget.showArrow)
               const SizedBox(width: 8),
             if (widget.showArrow)
-              Icon(Icons.chevron_right_rounded, color: Colors.white.withValues(alpha: 0.3), size: 24),
+              Icon(Icons.chevron_right_rounded,
+                  color: AppColors.textPrimary.withValues(alpha: 0.3),
+                  size: 24),
           ],
         ),
       ),
@@ -309,13 +331,15 @@ class _MinimalToggleTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
         children: [
-          Icon(icon, size: 24, color: Colors.white.withValues(alpha: 0.6)),
+          Icon(icon,
+              size: 24,
+              color: AppColors.textPrimary.withValues(alpha: 0.6)),
           const SizedBox(width: 20),
           Expanded(
             child: Text(
               label,
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
               ),
@@ -323,8 +347,8 @@ class _MinimalToggleTile extends StatelessWidget {
           ),
           Switch.adaptive(
             value: value,
-            activeColor: Colors.white,
-            activeTrackColor: const Color(0xFF34C759), // iOS Green
+            activeColor: AppColors.textPrimary,
+            activeTrackColor: const Color(0xFF34C759),
             onChanged: onChanged,
           ),
         ],
