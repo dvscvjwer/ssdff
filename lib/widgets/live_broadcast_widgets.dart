@@ -1535,3 +1535,312 @@ class EqualizerBars extends StatelessWidget {
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  3. AnimatedStudioCanvas & FloatingUnmutePill
+// ─────────────────────────────────────────────────────────────────────────────
+
+class AnimatedStudioCanvas extends StatelessWidget {
+  final Animation<double> animation;
+  final LiveChannel channel;
+  final bool isLoading;
+  final bool hasError;
+  final VoidCallback onRetry;
+
+  const AnimatedStudioCanvas({
+    super.key,
+    required this.animation,
+    required this.channel,
+    required this.isLoading,
+    required this.hasError,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool ar = LiveBroadcastType.isAr(context);
+
+    return Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        AnimatedBuilder(
+          animation: animation,
+          builder: (BuildContext context, _) {
+            return CustomPaint(
+              painter: _StudioBackdropPainter(
+                progress: animation.value,
+                primary: channel.brandPrimary,
+                secondary: channel.brandSecondary,
+                accent: channel.brandAccent,
+              ),
+            );
+          },
+        ),
+        if (isLoading || hasError)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                  decoration: BoxDecoration(
+                    color: const Color(0xB80B0B10),
+                    borderRadius: const BorderRadius.all(Radius.circular(20)),
+                    border: Border.all(
+                      color: channel.brandPrimary.withValues(alpha: 0.45),
+                      width: 1.0,
+                    ),
+                    boxShadow: AppShadows.card,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Stack(
+                        alignment: Alignment.center,
+                        children: <Widget>[
+                          if (!hasError)
+                            SizedBox(
+                              width: 78,
+                              height: 78,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: channel.brandAccent,
+                                backgroundColor:
+                                    Colors.white.withValues(alpha: 0.10),
+                              ),
+                            ),
+                          NetworkEmblem(
+                            channel: channel,
+                            size: 58,
+                            borderRadius: 15,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        channel.name(ar),
+                        style: LiveBroadcastType.style(
+                          context,
+                          size: 15,
+                          weight: FontWeight.w800,
+                          display: true,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        hasError
+                            ? (ar
+                                ? 'تعذر استلام إشارة البث المباشر حالياً'
+                                : 'Live broadcast signal interrupted')
+                            : (ar
+                                ? 'جاري الاتصال بالبث المباشر فائق الوضوح...'
+                                : 'Connecting to Ultra-Low-Latency Stream...'),
+                        style: LiveBroadcastType.style(
+                          context,
+                          size: 12,
+                          weight: FontWeight.w500,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      if (hasError) ...<Widget>[
+                        const SizedBox(height: 12),
+                        ElevatedButton.icon(
+                          onPressed: onRetry,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 10,
+                            ),
+                            shape: const RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(20)),
+                            ),
+                          ),
+                          icon: const Icon(Icons.refresh_rounded, size: 16),
+                          label: Text(
+                            ar ? 'إعادة الاتصال' : 'Reconnect',
+                            style: LiveBroadcastType.style(
+                              context,
+                              size: 12,
+                              weight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _StudioBackdropPainter extends CustomPainter {
+  final double progress;
+  final Color primary;
+  final Color secondary;
+  final Color accent;
+
+  const _StudioBackdropPainter({
+    required this.progress,
+    required this.primary,
+    required this.secondary,
+    required this.accent,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Rect full = Offset.zero & size;
+    final Paint basePaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: <Color>[
+          secondary.withValues(alpha: 0.72),
+          const Color(0xFF07070B),
+          AppColors.background,
+        ],
+      ).createShader(full);
+    canvas.drawRect(full, basePaint);
+
+    final double angle = progress * 2 * math.pi;
+    final Offset orb1 = Offset(
+      size.width * (0.28 + 0.14 * math.cos(angle)),
+      size.height * (0.35 + 0.12 * math.sin(angle)),
+    );
+    final Offset orb2 = Offset(
+      size.width * (0.74 + 0.12 * math.sin(angle)),
+      size.height * (0.66 + 0.14 * math.cos(angle)),
+    );
+
+    final double r1 = size.shortestSide * 0.68;
+    canvas.drawCircle(
+      orb1,
+      r1,
+      Paint()
+        ..shader = RadialGradient(
+          colors: <Color>[
+            primary.withValues(alpha: 0.36),
+            primary.withValues(alpha: 0.0),
+          ],
+        ).createShader(Rect.fromCircle(center: orb1, radius: r1)),
+    );
+
+    final double r2 = size.shortestSide * 0.56;
+    canvas.drawCircle(
+      orb2,
+      r2,
+      Paint()
+        ..shader = RadialGradient(
+          colors: <Color>[
+            accent.withValues(alpha: 0.16),
+            accent.withValues(alpha: 0.0),
+          ],
+        ).createShader(Rect.fromCircle(center: orb2, radius: r2)),
+    );
+
+    final Paint ringPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..color = Colors.white.withValues(alpha: 0.05);
+    final Offset center = Offset(size.width * 0.5, size.height * 0.5);
+    for (int i = 1; i <= 3; i++) {
+      canvas.drawCircle(center, size.shortestSide * (0.18 * i), ringPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StudioBackdropPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.primary != primary ||
+        oldDelegate.secondary != secondary;
+  }
+}
+
+class FloatingUnmutePill extends StatelessWidget {
+  final Animation<double> pulseAnimation;
+  final VoidCallback onTap;
+
+  const FloatingUnmutePill({
+    super.key,
+    required this.pulseAnimation,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool ar = LiveBroadcastType.isAr(context);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedBuilder(
+          animation: pulseAnimation,
+          builder: (BuildContext context, Widget? child) {
+            final double glowAlpha = 0.45 + 0.35 * pulseAnimation.value;
+            return ClipRRect(
+              borderRadius: const BorderRadius.all(Radius.circular(24)),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xD9101218),
+                    borderRadius: const BorderRadius.all(Radius.circular(24)),
+                    border: Border.all(
+                      color: AppColors.accentCyan.withValues(alpha: glowAlpha),
+                      width: 1.2,
+                    ),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: AppColors.accentCyan.withValues(alpha: 0.22),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: child,
+                ),
+              ),
+            );
+          },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Icon(
+                Icons.volume_off_rounded,
+                size: 16,
+                color: AppColors.accentCyan,
+              ),
+              const SizedBox(width: 7),
+              Text(
+                ar ? 'اضغط لتشغيل الصوت' : 'Tap to Unmute',
+                style: LiveBroadcastType.style(
+                  context,
+                  size: 12,
+                  weight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Icon(
+                Icons.volume_up_rounded,
+                size: 14,
+                color: AppColors.gold,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
