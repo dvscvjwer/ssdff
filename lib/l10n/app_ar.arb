@@ -1,0 +1,282 @@
+{
+  "@@locale": "ar",
+  "appName": "سكاي لايف",
+  "tagline": "قصص حسب الطلب.",
+
+  "navHome": "الرئيسية",
+  "navMovies": "أفلام",
+  "navSeries": "مسلسلات",
+  "navKids": "أطفال",
+  "navMe": "حسابي",
+
+  "tabForYou": "مقترح لك",
+  "tabAnime": "أنمي",
+
+  "actionPlay": "تشغيل",
+  "actionDownload": "تنزيل",
+  "actionDownloaded": "تم التنزيل",
+  "actionMyList": "قائمتي",
+  "actionInMyList": "في قائمتي",
+  "actionRate": "تقييم",
+  "actionShare": "مشاركة",
+  "actionCast": "بث",
+  "snackAddedToMyList": "تمت الإضافة إلى قائمتي",
+  "snackRemovedFromMyList": "تمت الإزالة من قائمتي",
+  "snackDownloadStarted": "بدأ التنزيل",
+  "snackDownloadRemoved": "تم حذف التنزيل",
+  "snackShareLink": "تم نسخ رابط المشاركة لـ {title}",
+  "@snackShareLink": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "snackCastUnavailable": "لم يتم العثور على جهاز بث",
+  "snackThanksForRating": "شكراً على تقييمك",
+  "snackComingSoon": "قريباً",
+  "snackSettingsSaved": "تم حفظ الإعدادات",
+  "detailRateTitle": "قيّم هذا العنوان",
+  "rateLove": "أعجبني جداً",
+  "rateLike": "أعجبني",
+  "rateNotForMe": "لم يعجبني",
+  "actionInfo": "تفاصيل",
+  "actionSeeAll": "عرض الكل",
+  "actionSwitch": "تبديل",
+  "actionContinue": "متابعة",
+  "actionAdd": "إضافة",
+  "actionClose": "إغلاق",
+  "actionCancel": "إلغاء",
+
+  "search": "بحث",
+  "searchHint": "قناة، فيلم، مسلسل، شخص…",
+  "searchRecent": "الأخيرة",
+  "searchTrending": "الأكثر بحثاً",
+  "searchEmptyTitle": "آسفون، لا تتوفر لدينا.",
+  "searchEmptyHint": "جرّب عنواناً، أو ممثلاً، أو نوعاً آخر.",
+
+  "browseGenre": "النوع",
+  "browseRegion": "المنطقة",
+  "browseYear": "السنة",
+  "browseSort": "الفرز",
+  "browseAll": "الكل",
+  "sortNewlyAdded": "أضيف حديثاً",
+  "sortTopRated": "الأعلى تقييماً",
+  "sortReleaseDate": "تاريخ الإصدار",
+
+  "rowTopPicks": "أفضل الاختيارات",
+  "rowNewReleases": "إصدارات جديدة",
+  "rowTrending": "الأكثر رواجاً",
+  "rowContinueWatching": "متابعة المشاهدة",
+  "rowCriticsCorner": "اختيارات النقاد",
+  "rowTopMovies": "أفضل الأفلام",
+  "rowNewMovies": "أفلام جديدة",
+  "rowActionThriller": "أكشن وإثارة",
+  "rowDramaPicks": "اختيارات درامية",
+  "rowTopSeries": "أفضل المسلسلات",
+  "rowNewSeries": "مسلسلات جديدة",
+  "rowMystery": "غموض وإثارة",
+  "rowDocumentaries": "وثائقيات",
+  "rowForLittleOnes": "للصغار",
+  "rowBedtime": "قصص قبل النوم",
+  "rowLearnPlay": "تعلّم والعب",
+  "rowAllTitles": "كل العناوين",
+  "rowBrowseByStudio": "تصفّح حسب الاستوديو",
+
+  "kindMovie": "فيلم",
+  "kindSeries": "مسلسل",
+  "kindKids": "أطفال",
+
+  "detailEpisodes": "الحلقات",
+  "detailAbout": "حول",
+  "detailMoreLikeThis": "أعمال مشابهة",
+  "detailCast": "طاقم العمل",
+  "detailSeason": "الموسم {n}",
+  "@detailSeason": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "aboutGenres": "الأنواع",
+  "aboutYear": "السنة",
+  "aboutRuntime": "المدة",
+  "aboutAudio": "الصوت",
+  "aboutSubtitles": "الترجمة",
+  "aboutCastLabel": "الطاقم",
+
+  "playerLock": "قفل",
+  "playerNext": "التالي",
+  "playerExit": "خروج",
+  "playerBrightness": "السطوع",
+  "playerVolume": "الصوت",
+  "playerSpeed": "سرعة التشغيل",
+  "playerQuality": "الجودة",
+  "playerSubtitles": "الترجمة",
+  "playerAudio": "الصوت",
+  "playerAspect": "نسبة العرض",
+  "playerAspectFit": "ملاءمة",
+  "playerQualityAuto": "تلقائي",
+
+  "meStandardProfile": "حساب اعتيادي",
+  "meKidsProfile": "حساب أطفال",
+  "meSwitch": "تبديل",
+  "tileDownloads": "التنزيلات",
+  "tileHistory": "سجل المشاهدة",
+  "meWhosWatching": "من يشاهد؟",
+  "meWhosWatchingHint": "اضغط على ملف لبدء المشاهدة",
+  "meAddProfile": "إضافة حساب",
+  "meKidsBadge": "أطفال",
+
+  "menuSettings": "الإعدادات",
+  "menuConnectTV": "الاتصال بالتلفاز",
+  "menuParental": "الرقابة الأبوية",
+  "menuLanguage": "لغة التطبيق",
+  "menuNotifications": "الإشعارات",
+  "menuHelp": "مركز المساعدة",
+  "menuAbout": "عن سكاي لايف",
+  "menuLogout": "تسجيل الخروج",
+  "logoutConfirm": "هل تريد تسجيل الخروج من هذا الملف؟",
+
+  "myListTitle": "قائمتي",
+  "myListEmptyTitle": "لا يوجد شيء هنا بعد",
+  "myListEmptyHint": "اضغط على أيقونة + لإضافة عمل إلى قائمتك.",
+
+  "downloadsTitle": "التنزيلات",
+  "downloadsNote": "تبقى التنزيلات على هذا الجهاز وتنتهي صلاحيتها بعد 30 يوماً.",
+  "downloadsReady": "جاهز للمشاهدة",
+  "downloadsDownloading": "جارٍ التنزيل…",
+  "downloadsEmptyTitle": "لا توجد تنزيلات بعد",
+  "downloadsEmptyHint": "اضغط على أيقونة التنزيل في أي عنوان لحفظه هنا.",
+  "downloadsClearTitle": "حذف كل التنزيلات؟",
+  "downloadsClearMessage": "سيتم إزالة جميع العناوين المنزّلة من هذا الجهاز.",
+  "dialogCancel": "إلغاء",
+  "dialogConfirm": "تأكيد",
+
+  "premiumTitle": "البريميوم",
+  "premiumUnlock": "افتح سكاي لايف بريميوم",
+  "premiumPitch": "جودة 4K HDR، بدون إعلانات، 4 شاشات في وقت واحد، تنزيل للمشاهدة دون اتصال.",
+  "premiumChoose": "اختر باقة",
+  "premiumWhat": "ما تحصل عليه",
+  "premiumFeature4k": "حتى 4K HDR",
+  "premiumFeatureDevices": "المشاهدة على 4 أجهزة",
+  "premiumFeatureOffline": "تنزيل ومشاهدة دون اتصال",
+  "premiumFeatureNoAds": "بدون إعلانات",
+  "premiumFeatureLangs": "صوت وترجمة بعدة لغات",
+  "premiumContinueWith": "المتابعة مع {plan}",
+  "@premiumContinueWith": {
+    "placeholders": {
+      "plan": { "type": "String" }
+    }
+  },
+  "premiumCancel": "يمكنك الإلغاء في أي وقت من الإعدادات.",
+  "premiumGoCta": "اشترك في البريميوم",
+  "premiumGoSub": "4K + بدون إعلانات + بث متزامن",
+  "planBasicName": "أساسية",
+  "planBasicDesc": "720p · شاشة واحدة",
+  "planStandardName": "قياسية",
+  "planStandardDesc": "Full HD · شاشتان · تنزيل",
+  "planPremiumName": "بريميوم",
+  "planPremiumDesc": "4K HDR · 4 شاشات · تنزيل",
+  "planPerMonth": "شهرياً",
+  "premiumRedirect": "جارٍ التحويل إلى الدفع…",
+
+  "settingsTitle": "الإعدادات",
+  "settingsGroupPlayback": "التشغيل",
+  "settingsGroupDownloads": "التنزيلات",
+  "settingsGroupApp": "التطبيق",
+  "settingsAppLanguage": "لغة التطبيق",
+  "settingsVideoQuality": "جودة الفيديو",
+  "settingsSubtitleStyle": "نمط الترجمة",
+  "settingsPreferredAudio": "اللغة الصوتية المفضّلة",
+  "settingsDataSaver": "موفّر البيانات",
+  "settingsAutoplayNext": "تشغيل تلقائي للحلقة التالية",
+  "settingsAutoplayPreviews": "تشغيل تلقائي للمعاينات",
+  "settingsDownloadLocation": "موقع التنزيل",
+  "settingsDownloadLocationValue": "الذاكرة الداخلية · 14.3 جيجا متاحة",
+  "settingsDownloadQuality": "جودة التنزيل",
+  "settingsWifiOnly": "التنزيل عبر Wi-Fi فقط",
+  "settingsClearDownloads": "مسح التنزيلات",
+  "settingsManageDevices": "إدارة الأجهزة",
+  "settingsAboutApp": "عن سكاي لايف",
+  "settingsAppVersion": "الإصدار {version}",
+  "@settingsAppVersion": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "settingsClearCache": "مسح الذاكرة المؤقتة",
+  "settingsCacheSize": "{mb} ميجا",
+  "@settingsCacheSize": {
+    "placeholders": {
+      "mb": { "type": "int" }
+    }
+  },
+  "settingsValueAuto": "تلقائي",
+  "settingsValueStandard": "قياسي",
+  "settingsValueHigh": "عالي",
+  "settingsValueDataSaver": "موفر البيانات",
+  "audioFrench": "الفرنسية",
+  "audioSpanish": "الإسبانية",
+  "subtitleStyleDefault": "افتراضي",
+  "subtitleStyleLarge": "كبير",
+  "subtitleStyleSmall": "صغير",
+
+  "languageDialogTitle": "لغة التطبيق",
+  "languageSystem": "حسب لغة الجهاز",
+  "languageEnglish": "English",
+  "languageArabic": "العربية",
+
+  "qualityHd": "جودة عالية",
+
+  "kidsTopicLearn": "تعلّم",
+  "kidsTopicAdventure": "مغامرات",
+  "kidsTopicSongs": "أغانٍ",
+  "kidsTopicStories": "قصص",
+  "kidsTopicAnimals": "حيوانات",
+  "kidsTopicBedtime": "ما قبل النوم",
+
+  "navLive": "البث المباشر",
+  "navGames": "ألعاب",
+
+  "liveTvTitle": "البث المباشر",
+  "liveCatAll": "الكل",
+  "liveCatNews": "أخبار",
+  "liveCatSports": "رياضة",
+  "liveCatMovies": "أفلام",
+  "liveCatEntertainment": "ترفيه",
+  "liveCatKids": "أطفال",
+  "liveCatMusic": "موسيقى",
+  "liveCatDocs": "وثائقي",
+  "channelGenericName": "قناة {n}",
+  "@channelGenericName": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "channelNowGeneric": "الآن على الهواء",
+
+  "gamesTitle": "الألعاب",
+  "gamesFeaturedTitle": "تحدي اليوم",
+  "gamesFeaturedSub": "اربح عملات بالمشاركة اليوم",
+  "gamesSectionTrending": "الأكثر رواجاً",
+  "gamesSectionCasual": "كاجوال",
+  "gamesSectionPuzzle": "ألغاز",
+  "gameGenericName": "لعبة {n}",
+  "@gameGenericName": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+
+  "rowTop10": "الأكثر مشاهدة اليوم",
+  "rowTopChannels": "أفضل القنوات المباشرة",
+  "rowNetworks": "الشبكات",
+  "networkLabel": "استوديو {n}",
+  "@networkLabel": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "liveTvGuide": "دليل القنوات",
+  "liveNoGuideAvailable": "لا يوجد دليل متاح",
+  "liveNoChannelsInCategory": "لا توجد قنوات حالياً في هذه الفئة",
+  "homeContentComingSoon": "المحتوى قادم قريباً",
+  "homeContentAdminPanel": "سيتم إضافة المسلسلات والأفلام من لوحة الإدارة",
+  "actionWatchNow": "شاهد الآن"
+}
