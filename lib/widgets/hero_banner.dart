@@ -1,6 +1,7 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/title.dart';
@@ -9,7 +10,9 @@ import '../screens/player_screen.dart';
 import '../services/user_state.dart';
 import '../theme/app_theme.dart';
 
-/// Auto-scrolling cinematic hero carousel with animated page indicators
+// ─────────────────────────────────────────────
+//  HeroBanner — Cinematic auto-scrolling hero
+// ─────────────────────────────────────────────
 class HeroBanner extends StatefulWidget {
   final TitleItem title;
   const HeroBanner({super.key, required this.title});
@@ -24,20 +27,19 @@ class _HeroBannerState extends State<HeroBanner> {
   int _currentPage = 0;
   Timer? _autoScrollTimer;
 
+  // ── Lifecycle ──────────────────────────────
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    // Build 3 hero items from the title + related
     _heroItems = [widget.title];
-    // Add 2 more items if available
-    _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 6), (_) {
       if (_pageController.hasClients && _heroItems.length > 1) {
         final next = (_currentPage + 1) % _heroItems.length;
         _pageController.animateToPage(
           next,
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeInOutCubic,
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeInOutQuart,
         );
       }
     });
@@ -50,9 +52,9 @@ class _HeroBannerState extends State<HeroBanner> {
     super.dispose();
   }
 
+  // ── Build ──────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    // Use single hero for now (expandable to carousel later)
     return _buildSingleHero(context, widget.title);
   }
 
@@ -66,81 +68,80 @@ class _HeroBannerState extends State<HeroBanner> {
         );
       },
       child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.62,
+        height: MediaQuery.of(context).size.height * 0.60,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Background image
+            // ── Background image ──
             CachedNetworkImage(
               imageUrl: title.backdrop,
               fit: BoxFit.cover,
               placeholder: (_, __) => Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      AppColors.surfaceAlt,
-                      AppColors.background,
-                    ],
+                    colors: [AppColors.surfaceAlt, AppColors.background],
                   ),
                 ),
               ),
-              errorWidget: (_, __, ___) => Container(color: AppColors.surface),
+              errorWidget: (_, __, ___) =>
+                  const ColoredBox(color: AppColors.surface),
             ),
 
-            // Cinematic multi-layer gradient overlay
+            // ── Cinematic 6-stop gradient overlay ──
             Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  stops: const [0.0, 0.1, 0.45, 0.7, 0.85, 1.0],
+                  stops: [0.0, 0.15, 0.5, 0.75, 0.9, 1.0],
                   colors: [
-                    Colors.black.withValues(alpha: 0.7),
-                    Colors.black.withValues(alpha: 0.15),
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.5),
-                    Colors.black.withValues(alpha: 0.85),
-                    const Color(0xFF0F0F0F),
+                    Color(0xB3000000), // 70% black — top bar protection
+                    Color(0x26000000), // 15% black
+                    Color(0x00000000), // transparent — content breathes
+                    Color(0x80000000), // 50% black — readability begins
+                    Color(0xD9000000), // 85% black
+                    Color(0xFF050505), // solid background merge
                   ],
                 ),
               ),
             ),
 
-            // Side vignettes
+            // ── Side vignettes ──
             Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                   colors: [
-                    Colors.black.withValues(alpha: 0.4),
-                    Colors.transparent,
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.4),
+                    Color(0x66000000), // 40% black
+                    Color(0x00000000),
+                    Color(0x00000000),
+                    Color(0x66000000), // 40% black
                   ],
-                  stops: const [0.0, 0.2, 0.8, 1.0],
+                  stops: [0.0, 0.2, 0.8, 1.0],
                 ),
               ),
             ),
 
-            // TOP 10 Badge
+            // ── TOP 10 Badge ──
             PositionedDirectional(
               top: 16,
               start: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFFFF1A2D), Color(0xFFCC0000)],
+                    colors: [Color(0xFFFF1A2D), Color(0xFFE50914)],
                   ),
-                  borderRadius: BorderRadius.circular(6),
-                  boxShadow: [
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: const [
                     BoxShadow(
-                      color: const Color(0xFFE50914).withValues(alpha: 0.6),
-                      blurRadius: 12,
-                      offset: const Offset(0, 3),
+                      color: Color(0x99E50914),
+                      blurRadius: 16,
+                      offset: Offset(0, 4),
                     ),
                   ],
                 ),
@@ -153,9 +154,9 @@ class _HeroBannerState extends State<HeroBanner> {
                       'TOP 10',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 1.2,
+                        letterSpacing: 1.5,
                       ),
                     ),
                   ],
@@ -163,14 +164,41 @@ class _HeroBannerState extends State<HeroBanner> {
               ),
             ),
 
-            // Content at bottom
+            // ── Page indicators ──
+            if (_heroItems.length > 1)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 70,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    _heroItems.length,
+                    (i) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOutCubic,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: i == _currentPage ? 6 : 4,
+                      height: i == _currentPage ? 6 : 4,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: i == _currentPage
+                            ? const Color(0xFFFFFFFF)
+                            : const Color(0x4DFFFFFF),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+            // ── Content at bottom ──
             Positioned(
               left: 0,
               right: 0,
               bottom: 24,
               child: Column(
                 children: [
-                  // Large dramatic title
+                  // ── Large dramatic title (Outfit) ──
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Text(
@@ -178,22 +206,22 @@ class _HeroBannerState extends State<HeroBanner> {
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: GoogleFonts.outfit(
                         color: Colors.white,
-                        fontSize: 34,
+                        fontSize: 40,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
-                        height: 1.1,
-                        shadows: [
+                        letterSpacing: -1.5,
+                        height: 0.95,
+                        shadows: const [
                           Shadow(
-                            color: Colors.black.withValues(alpha: 0.9),
-                            offset: const Offset(0, 4),
-                            blurRadius: 15,
+                            color: Color(0xE6000000),
+                            offset: Offset(0, 3),
+                            blurRadius: 12,
                           ),
                           Shadow(
-                            color: const Color(0xFFE50914).withValues(alpha: 0.25),
-                            offset: const Offset(0, 0),
-                            blurRadius: 30,
+                            color: Color(0x33E50914),
+                            offset: Offset(0, 0),
+                            blurRadius: 40,
                           ),
                         ],
                       ),
@@ -201,7 +229,7 @@ class _HeroBannerState extends State<HeroBanner> {
                   ),
                   const SizedBox(height: 10),
 
-                  // Description (1-line teaser)
+                  // ── Description ──
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: Text(
@@ -209,8 +237,8 @@ class _HeroBannerState extends State<HeroBanner> {
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                      style: const TextStyle(
+                        color: Color(0xB3FFFFFF), // 70% white
                         fontSize: 12.5,
                         height: 1.4,
                         fontWeight: FontWeight.w400,
@@ -219,7 +247,7 @@ class _HeroBannerState extends State<HeroBanner> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Genre pills as actual pill chips
+                  // ── Genre pills ──
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
@@ -227,21 +255,22 @@ class _HeroBannerState extends State<HeroBanner> {
                     children: [
                       for (final genre in title.genres)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
+                            color: const Color(0x14FFFFFF), // 8%
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.12),
+                              color: const Color(0x1FFFFFFF),
                               width: 0.5,
                             ),
                           ),
                           child: Text(
                             genre,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.85),
+                            style: const TextStyle(
+                              color: Color(0xD9FFFFFF), // 85%
                               fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w500,
                               letterSpacing: 0.3,
                             ),
                           ),
@@ -250,7 +279,7 @@ class _HeroBannerState extends State<HeroBanner> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Action buttons
+                  // ── Action buttons ──
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
@@ -260,18 +289,23 @@ class _HeroBannerState extends State<HeroBanner> {
                           child: AnimatedBuilder(
                             animation: userState,
                             builder: (_, __) {
-                              final inList = userState.isInMyList(title.id);
+                              final inList =
+                                  userState.isInMyList(title.id);
                               final s = AppLocalizations.of(context);
                               return _GlassButton(
                                 icon: inList ? Icons.check : Icons.add,
-                                label: inList ? s.actionInMyList : s.actionMyList,
+                                label: inList
+                                    ? s.actionInMyList
+                                    : s.actionMyList,
                                 onTap: () async {
-                                  final added = await userState.toggleMyList(title.id);
+                                  final added = await userState
+                                      .toggleMyList(title.id);
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       behavior: SnackBarBehavior.floating,
-                                      duration: const Duration(seconds: 2),
+                                      duration:
+                                          const Duration(seconds: 2),
                                       content: Text(added
                                           ? s.snackAddedToMyList
                                           : s.snackRemovedFromMyList),
@@ -287,7 +321,8 @@ class _HeroBannerState extends State<HeroBanner> {
                         _PlayButton(
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute<void>(
-                              builder: (_) => PlayerScreen(title: title),
+                              builder: (_) =>
+                                  PlayerScreen(title: title),
                             ),
                           ),
                         ),
@@ -296,10 +331,12 @@ class _HeroBannerState extends State<HeroBanner> {
                         Expanded(
                           child: _GlassButton(
                             icon: Icons.info_outline_rounded,
-                            label: AppLocalizations.of(context).actionInfo,
+                            label:
+                                AppLocalizations.of(context).actionInfo,
                             onTap: () => Navigator.of(context).push(
                               MaterialPageRoute<void>(
-                                builder: (_) => DetailScreen(title: title),
+                                builder: (_) =>
+                                    DetailScreen(title: title),
                               ),
                             ),
                           ),
@@ -317,39 +354,42 @@ class _HeroBannerState extends State<HeroBanner> {
   }
 }
 
-/// Glass-morphism side button
+// ─────────────────────────────────────────────
+//  _GlassButton — Glass-morphism side button
+// ─────────────────────────────────────────────
 class _GlassButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _GlassButton({required this.icon, required this.label, required this.onTap});
+  const _GlassButton(
+      {required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
+          color: const Color(0x12FFFFFF), // 7%
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.12),
+            color: const Color(0x1AFFFFFF),
             width: 0.5,
           ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white, size: 22),
+            Icon(icon, color: Colors.white, size: 20),
             const SizedBox(height: 4),
             Text(
               label,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
+              style: const TextStyle(
+                color: Color(0xD9FFFFFF), // 85%
                 fontSize: 10,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -359,7 +399,9 @@ class _GlassButton extends StatelessWidget {
   }
 }
 
-/// Premium animated play button
+// ─────────────────────────────────────────────
+//  _PlayButton — Premium animated play button
+// ─────────────────────────────────────────────
 class _PlayButton extends StatelessWidget {
   final VoidCallback onTap;
   const _PlayButton({required this.onTap});
@@ -368,35 +410,35 @@ class _PlayButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(30),
+      borderRadius: BorderRadius.circular(28),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 13),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFFFF1A2D), Color(0xFFE50914), Color(0xFFB00710)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: const [
             BoxShadow(
-              color: const Color(0xFFE50914).withValues(alpha: 0.5),
-              blurRadius: 20,
-              spreadRadius: 2,
-              offset: const Offset(0, 4),
+              color: Color(0x80E50914),
+              blurRadius: 24,
+              spreadRadius: 0,
+              offset: Offset(0, 6),
             ),
           ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 26),
+            const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 24),
             const SizedBox(width: 6),
             Text(
               AppLocalizations.of(context).actionPlay,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.3,
               ),
