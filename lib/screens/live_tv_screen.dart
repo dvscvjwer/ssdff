@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui' show ImageFilter;
+import 'dart:ui' show ImageFilter, PointerDeviceKind;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
@@ -12,7 +12,8 @@ import '../theme/app_theme.dart';
 import '../widgets/live_broadcast_widgets.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  LiveTvScreen v3.0 — World-Class Responsive Split-View & Broadcast Player
+//  LiveTvScreen v4.0 — Quiet Luxury Edition (Apple TV+ & B&O Restraint)
+//  Responsive Split-View (>= 960px) & Sticky Cinema Stage (< 960px)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class LiveTvScreen extends StatefulWidget {
@@ -25,6 +26,7 @@ class LiveTvScreen extends StatefulWidget {
 class _LiveTvScreenState extends State<LiveTvScreen>
     with TickerProviderStateMixin {
   static const String _prefsFavoritesKey = 'skylive_live_favorites_v3';
+  static const Duration _hudAutoHideDelay = Duration(milliseconds: 2600);
 
   LiveChannel _activeChannel = LiveBroadcastCatalog.channels.first;
   LiveCategory _selectedCategory = LiveCategory.all;
@@ -73,15 +75,15 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     _playerSyncTick = ValueNotifier<int>(0);
     _studioAnimCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 6),
+      duration: const Duration(seconds: 8),
     )..repeat();
     _pulseAnimCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(milliseconds: 1600),
     )..repeat(reverse: true);
     _eqAnimCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 950),
     )..repeat();
     _searchCtrl = TextEditingController();
 
@@ -161,13 +163,26 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       ..showSnackBar(
         SnackBar(
           duration: const Duration(seconds: 2),
+          backgroundColor: LiveLuxuryPalette.salonTileActive,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            side: BorderSide(
+              color: LiveLuxuryPalette.hairlineMedium,
+              width: 0.6,
+            ),
+          ),
           content: Text(
             added
                 ? (ar
                     ? 'تم تفعيل التذكير لبرنامج: ${slot.title(true)}'
                     : 'Reminder set for: ${slot.title(false)}')
                 : (ar ? 'تم إلغاء التذكير' : 'Reminder cancelled'),
-            style: LiveBroadcastType.style(context, size: 13),
+            style: LiveBroadcastType.style(
+              context,
+              size: 13,
+              weight: FontWeight.w500,
+              color: LiveLuxuryPalette.textPrimary,
+            ),
           ),
         ),
       );
@@ -178,7 +193,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     if (!_isPlaying) {
       return;
     }
-    _hudHideTimer = Timer(const Duration(milliseconds: 3500), () {
+    _hudHideTimer = Timer(_hudAutoHideDelay, () {
       if (!mounted || !_isPlaying) {
         return;
       }
@@ -488,10 +503,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   void _openQualitySheet(BuildContext sheetHostContext) {
     showModalBottomSheet<void>(
       context: sheetHostContext,
-      backgroundColor: AppColors.surfaceModal,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       builder: (_) => QualityPickerSheet(
         selectedQuality: _selectedQuality,
         onSelect: (String q) {
@@ -534,7 +547,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         Localizations.of<AppLocalizations>(context, AppLocalizations);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: LiveLuxuryPalette.obsidianCanvas,
       body: SafeArea(
         bottom: canPop,
         child: LayoutBuilder(
@@ -546,7 +559,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                   context,
                   l10n: l10n,
                   canPop: canPop,
-                  maxWidth: constraints.maxWidth,
                   isWide: isWide,
                 ),
                 Expanded(
@@ -572,67 +584,79 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     );
   }
 
-  // ── Top Broadcast Status Header ────────────────────────────────────────────
+  // ── Quiet Luxury Editorial Top Header (Zero Marketing Clutter) ────────────
   Widget _buildTopHeader(
     BuildContext context, {
     required AppLocalizations? l10n,
     required bool canPop,
-    required double maxWidth,
     required bool isWide,
   }) {
     final bool ar = LiveBroadcastType.isAr(context);
     final bool favActive = _selectedCategory == LiveCategory.favorites;
 
     return Container(
-      height: isWide ? 54 : 48,
+      height: isWide ? 56 : 50,
       padding: EdgeInsetsDirectional.symmetric(
-        horizontal: isWide ? 24 : 14,
+        horizontal: isWide ? 26 : 16,
         vertical: 6,
       ),
       child: Row(
         children: <Widget>[
           if (canPop) ...<Widget>[
-            InkWell(
-              onTap: () => Navigator.of(context).maybePop(),
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.glassSurface,
-                  borderRadius: const BorderRadius.all(Radius.circular(10)),
-                  border: Border.all(color: AppColors.cardBorder),
-                ),
-                child: Icon(
-                  ar
-                      ? Icons.arrow_forward_ios_rounded
-                      : Icons.arrow_back_ios_new_rounded,
-                  size: 16,
-                  color: AppColors.textPrimary,
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => Navigator.of(context).maybePop(),
+                borderRadius: const BorderRadius.all(Radius.circular(11)),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: LiveLuxuryPalette.salonTile,
+                    borderRadius: const BorderRadius.all(Radius.circular(11)),
+                    border: Border.all(
+                      color: LiveLuxuryPalette.hairlineSubtle,
+                      width: 0.6,
+                    ),
+                  ),
+                  child: Icon(
+                    ar
+                        ? Icons.arrow_forward_ios_rounded
+                        : Icons.arrow_back_ios_new_rounded,
+                    size: 15,
+                    color: LiveLuxuryPalette.textPrimary,
+                  ),
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
           ],
+
+          // Calm Ruby Broadcast Indicator Dot
           AnimatedBuilder(
             animation: _pulseAnimCtrl,
             builder: (BuildContext context, _) {
               return Container(
-                width: 9,
-                height: 9,
+                width: 7,
+                height: 7,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primaryLight.withValues(
-                    alpha: 0.65 + 0.35 * _pulseAnimCtrl.value,
+                  color: LiveLuxuryPalette.rubyLive.withValues(
+                    alpha: 0.68 + 0.32 * _pulseAnimCtrl.value,
                   ),
-                  boxShadow: const <BoxShadow>[
-                    BoxShadow(color: AppColors.glowRed, blurRadius: 10),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: LiveLuxuryPalette.rubyLive.withValues(alpha: 0.42),
+                      blurRadius: 8,
+                    ),
                   ],
                 ),
               );
             },
           ),
-          const SizedBox(width: 9),
+          const SizedBox(width: 10),
+
+          // Editorial Title
           Flexible(
             child: Text(
               l10n?.liveTvTitle ?? (ar ? 'البث المباشر' : 'Live TV'),
@@ -640,118 +664,89 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               overflow: TextOverflow.ellipsis,
               style: LiveBroadcastType.style(
                 context,
-                size: isWide ? 20 : 17.5,
+                size: isWide ? 20 : 18,
                 weight: FontWeight.w800,
+                color: LiveLuxuryPalette.textPrimary,
+                letterSpacing: ar ? 0.0 : -0.3,
                 display: true,
               ),
             ),
           ),
-          if (maxWidth >= 540) ...<Widget>[
-            const SizedBox(width: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.accentCyan.withValues(alpha: 0.12),
-                borderRadius: const BorderRadius.all(Radius.circular(20)),
-                border: Border.all(
-                  color: AppColors.accentCyan.withValues(alpha: 0.35),
-                ),
-              ),
-              child: Text(
-                ar
-                    ? '${LiveBroadcastCatalog.channels.length} قناة مباشرة • استجابة فورية'
-                    : '${LiveBroadcastCatalog.channels.length} LIVE • ULTRA LOW LATENCY',
-                style: LiveBroadcastType.style(
-                  context,
-                  size: 10.5,
-                  weight: FontWeight.w700,
-                  color: AppColors.accentCyan,
-                  tabular: true,
-                ),
-              ),
-            ),
-          ],
           const Spacer(),
 
-          // Quick Favorites Toggle Pill
-          InkWell(
-            onTap: () {
-              unawaited(HapticFeedback.selectionClick());
-              setState(() {
-                _selectedCategory = favActive
-                    ? LiveCategory.all
-                    : LiveCategory.favorites;
-                if (!isWide) {
-                  _mobileTabIndex = 0;
-                }
-              });
-            },
-            borderRadius: const BorderRadius.all(Radius.circular(20)),
-            child: AnimatedContainer(
-              duration: AppDurations.normal,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: favActive
-                    ? AppColors.primary.withValues(alpha: 0.22)
-                    : AppColors.surfaceAlt,
-                borderRadius: const BorderRadius.all(Radius.circular(20)),
-                border: Border.all(
-                  color: favActive ? AppColors.primary : AppColors.cardBorder,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Icon(
-                    Icons.favorite_rounded,
-                    size: 14,
-                    color: favActive
-                        ? AppColors.primaryLight
-                        : AppColors.textSecondary,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    '${_favoriteIds.length}',
-                    style: LiveBroadcastType.style(
-                      context,
-                      size: 11.5,
-                      weight: FontWeight.w700,
-                      tabular: true,
-                    ),
-                  ),
-                ],
-              ),
+          // Unboxed Platinum Digital Clock
+          Text(
+            EpgSlot.formatClock(_now),
+            style: LiveBroadcastType.style(
+              context,
+              size: 13.5,
+              weight: FontWeight.w500,
+              color: LiveLuxuryPalette.silverSecondary,
+              letterSpacing: 0.4,
+              tabular: true,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
 
-          // Live Broadcast Clock
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceAlt,
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-              border: Border.all(color: AppColors.cardBorder),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const Icon(
-                  Icons.access_time_filled_rounded,
-                  size: 13,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  EpgSlot.formatClock(_now),
-                  style: LiveBroadcastType.style(
-                    context,
-                    size: 12,
-                    weight: FontWeight.w700,
-                    tabular: true,
+          // Refined Glass Favorites Filter Pill
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                unawaited(HapticFeedback.selectionClick());
+                setState(() {
+                  _selectedCategory =
+                      favActive ? LiveCategory.all : LiveCategory.favorites;
+                  if (!isWide) {
+                    _mobileTabIndex = 0;
+                  }
+                });
+              },
+              borderRadius: const BorderRadius.all(Radius.circular(17)),
+              child: AnimatedContainer(
+                duration: AppDurations.normal,
+                height: 34,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: favActive
+                      ? LiveLuxuryPalette.rubyLive.withValues(alpha: 0.14)
+                      : LiveLuxuryPalette.salonTile,
+                  borderRadius: const BorderRadius.all(Radius.circular(17)),
+                  border: Border.all(
+                    color: favActive
+                        ? LiveLuxuryPalette.rubyLive.withValues(alpha: 0.36)
+                        : LiveLuxuryPalette.hairlineSubtle,
+                    width: favActive ? 0.75 : 0.6,
                   ),
                 ),
-              ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(
+                      favActive
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      size: 15,
+                      color: favActive
+                          ? LiveLuxuryPalette.rubyLive
+                          : LiveLuxuryPalette.silverSecondary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${_favoriteIds.length}',
+                      style: LiveBroadcastType.style(
+                        context,
+                        size: 12,
+                        weight: favActive ? FontWeight.w700 : FontWeight.w600,
+                        color: favActive
+                            ? LiveLuxuryPalette.textPrimary
+                            : LiveLuxuryPalette.silverSecondary,
+                        tabular: true,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -759,7 +754,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     );
   }
 
-  // ── Wide Web / Desktop Split-View Cockpit (width >= 960px) ────────────────
+  // ── Wide Web / Desktop Split-View Cockpit (width >= 960px, gap: 20px) ─────
   Widget _buildWideSplitLayout(
     BuildContext context, {
     required AppLocalizations? l10n,
@@ -767,47 +762,47 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     required BoxConstraints constraints,
   }) {
     final List<EpgSlot> slots = _activeChannel.buildSchedule(_now);
+    final EpgSlot currentSlot = slots.first;
+    final EpgSlot nextSlot = slots.length > 1 ? slots[1] : slots.first;
     final double maxPlayerHeight =
         (constraints.maxHeight * 0.54).clamp(260.0, 500.0);
-    final double stageWidth = (constraints.maxWidth - 64) * 0.62;
+    final double stageWidth = (constraints.maxWidth - 72) * 0.62;
     final double playerHeight =
         math.min(stageWidth * 9.0 / 16.0, maxPlayerHeight);
 
     return Padding(
       padding: EdgeInsetsDirectional.fromSTEB(
-        24,
-        4,
-        24,
-        canPop ? 16 : 20,
+        26,
+        6,
+        26,
+        canPop ? 18 : 22,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          // Main Cinema Stage + Live Match + Timeline (62%)
+          // Main Cinema Stage + Editorial Program & Match Details (62%)
           Expanded(
             flex: 62,
             child: SingleChildScrollView(
-              padding: const EdgeInsetsDirectional.only(bottom: 16),
+              padding: const EdgeInsetsDirectional.only(bottom: 18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   Container(
                     height: playerHeight,
                     decoration: BoxDecoration(
+                      color: Colors.black,
                       borderRadius:
                           const BorderRadius.all(Radius.circular(18)),
                       border: Border.all(
-                        color:
-                            _activeChannel.brandPrimary.withValues(alpha: 0.42),
-                        width: 1.2,
+                        color: Colors.white.withValues(alpha: 0.09),
+                        width: 0.6,
                       ),
-                      boxShadow: <BoxShadow>[
+                      boxShadow: const <BoxShadow>[
                         BoxShadow(
-                          color: _activeChannel.brandPrimary
-                              .withValues(alpha: 0.24),
-                          blurRadius: 42,
-                          spreadRadius: 1,
-                          offset: const Offset(0, 12),
+                          color: Color(0x99000000),
+                          blurRadius: 36,
+                          offset: Offset(0, 16),
                         ),
                         ...AppShadows.card,
                       ],
@@ -815,28 +810,26 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                     child: _buildPlayerStage(
                       context,
                       isFullscreen: false,
-                      borderRadius: 17,
+                      borderRadius: 17.4,
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
                   ActiveProgramCard(
                     channel: _activeChannel,
-                    currentSlot: slots[0],
-                    nextSlot: slots[1],
+                    currentSlot: currentSlot,
+                    nextSlot: nextSlot,
                     now: _now,
                     isFavorite: _favoriteIds.contains(_activeChannel.id),
                     onToggleFavorite: () => _toggleFavorite(_activeChannel),
-                    onPrevChannel: () => _stepChannel(-1),
-                    onNextChannel: () => _stepChannel(1),
                   ),
                   if (_activeChannel.liveMatch != null) ...<Widget>[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     LiveMatchScorebugCard(
                       match: _activeChannel.liveMatch!,
                       pulseAnimation: _pulseAnimCtrl,
                     ),
                   ],
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
                   BroadcastScheduleStrip(
                     channel: _activeChannel,
                     slots: slots,
@@ -848,25 +841,28 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 20),
 
-          // Interactive TV Guide Sidebar (38%)
+          // Smoked Obsidian Salon Guide Sidebar (38%)
           Expanded(
             flex: 38,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 460),
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: LiveLuxuryPalette.smokedPanel,
                   borderRadius: const BorderRadius.all(Radius.circular(18)),
-                  border: Border.all(color: AppColors.cardBorder),
+                  border: Border.all(
+                    color: LiveLuxuryPalette.hairlineSubtle,
+                    width: 0.6,
+                  ),
                   boxShadow: AppShadows.card,
                 ),
                 child: _buildGuidePanel(
                   context,
                   l10n: l10n,
                   isWide: true,
-                  bottomPad: 14,
+                  bottomPad: 16,
                 ),
               ),
             ),
@@ -884,37 +880,40 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     required BoxConstraints constraints,
   }) {
     final List<EpgSlot> slots = _activeChannel.buildSchedule(_now);
+    final EpgSlot currentSlot = slots.first;
+    final EpgSlot nextSlot = slots.length > 1 ? slots[1] : slots.first;
     final double stickyMaxHeight =
         (constraints.maxHeight * 0.34).clamp(185.0, 290.0);
 
     return Column(
       children: <Widget>[
-        // Sticky Top Broadcast Player Stage
+        // Sticky Top Frameless OLED Player Stage
         Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(12, 2, 12, 0),
+          padding: const EdgeInsetsDirectional.fromSTEB(14, 4, 14, 0),
           child: ConstrainedBox(
             constraints: BoxConstraints(maxHeight: stickyMaxHeight),
             child: AspectRatio(
               aspectRatio: 16 / 9,
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.all(Radius.circular(15)),
+                  color: Colors.black,
+                  borderRadius: const BorderRadius.all(Radius.circular(18)),
                   border: Border.all(
-                    color: _activeChannel.brandPrimary.withValues(alpha: 0.42),
+                    color: Colors.white.withValues(alpha: 0.09),
+                    width: 0.6,
                   ),
-                  boxShadow: <BoxShadow>[
+                  boxShadow: const <BoxShadow>[
                     BoxShadow(
-                      color:
-                          _activeChannel.brandPrimary.withValues(alpha: 0.22),
+                      color: Color(0x85000000),
                       blurRadius: 24,
-                      offset: const Offset(0, 8),
+                      offset: Offset(0, 10),
                     ),
                   ],
                 ),
                 child: _buildPlayerStage(
                   context,
                   isFullscreen: false,
-                  borderRadius: 14,
+                  borderRadius: 17.4,
                 ),
               ),
             ),
@@ -932,7 +931,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             },
           ),
 
-        // Segmented Switcher: Live Channels vs Program & Match Info
+        // Quiet Luxury Segmented Switcher
         _buildMobileSegmentedTabs(context),
 
         // Active Tab Body
@@ -956,22 +955,20 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                     children: <Widget>[
                       ActiveProgramCard(
                         channel: _activeChannel,
-                        currentSlot: slots[0],
-                        nextSlot: slots[1],
+                        currentSlot: currentSlot,
+                        nextSlot: nextSlot,
                         now: _now,
                         isFavorite: _favoriteIds.contains(_activeChannel.id),
                         onToggleFavorite: () => _toggleFavorite(_activeChannel),
-                        onPrevChannel: () => _stepChannel(-1),
-                        onNextChannel: () => _stepChannel(1),
                       ),
                       if (_activeChannel.liveMatch != null) ...<Widget>[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 14),
                         LiveMatchScorebugCard(
                           match: _activeChannel.liveMatch!,
                           pulseAnimation: _pulseAnimCtrl,
                         ),
                       ],
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
                       BroadcastScheduleStrip(
                         channel: _activeChannel,
                         slots: slots,
@@ -997,12 +994,15 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
     return Container(
       height: 40,
-      margin: const EdgeInsetsDirectional.fromSTEB(14, 8, 14, 6),
-      padding: const EdgeInsets.all(3.5),
+      margin: const EdgeInsetsDirectional.fromSTEB(14, 10, 14, 8),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: const BorderRadius.all(Radius.circular(12)),
-        border: Border.all(color: AppColors.cardBorder),
+        color: LiveLuxuryPalette.smokedPanel,
+        borderRadius: const BorderRadius.all(Radius.circular(13)),
+        border: Border.all(
+          color: LiveLuxuryPalette.hairlineSubtle,
+          width: 0.6,
+        ),
       ),
       child: Row(
         children: List<Widget>.generate(2, (int idx) {
@@ -1017,15 +1017,14 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                 duration: AppDurations.normal,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  gradient: active
-                      ? const LinearGradient(
-                          colors: <Color>[
-                            AppColors.primary,
-                            AppColors.primaryDark,
-                          ],
+                  color: active ? const Color(0xFF1F1F27) : Colors.transparent,
+                  borderRadius: const BorderRadius.all(Radius.circular(10)),
+                  border: active
+                      ? Border.all(
+                          color: LiveLuxuryPalette.hairlineMedium,
+                          width: 0.6,
                         )
                       : null,
-                  borderRadius: const BorderRadius.all(Radius.circular(9)),
                 ),
                 child: Text(
                   labels[idx],
@@ -1034,9 +1033,10 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                   style: LiveBroadcastType.style(
                     context,
                     size: 12,
-                    weight: active ? FontWeight.w800 : FontWeight.w600,
-                    color:
-                        active ? Colors.white : AppColors.textSecondary,
+                    weight: active ? FontWeight.w700 : FontWeight.w500,
+                    color: active
+                        ? LiveLuxuryPalette.textPrimary
+                        : LiveLuxuryPalette.silverSecondary,
                     tabular: true,
                   ),
                 ),
@@ -1048,7 +1048,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     );
   }
 
-  // ── Interactive TV Guide Panel (Search + Category Pills + Channel List) ───
+  // ── Interactive Salon Guide Panel (Velvet Search + ShaderMask Categories) ─
   Widget _buildGuidePanel(
     BuildContext context, {
     required AppLocalizations? l10n,
@@ -1064,10 +1064,10 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       children: <Widget>[
         Padding(
           padding: EdgeInsetsDirectional.fromSTEB(
-            14,
-            isWide ? 14 : 4,
-            14,
-            8,
+            16,
+            isWide ? 16 : 4,
+            16,
+            10,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1075,43 +1075,28 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               if (isWide) ...<Widget>[
                 Row(
                   children: <Widget>[
-                    const Icon(
-                      Icons.live_tv_rounded,
-                      size: 18,
-                      color: AppColors.primaryLight,
-                    ),
-                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         l10n?.liveTvGuide ??
                             (ar ? 'دليل القنوات المباشرة' : 'Live TV Guide'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: LiveBroadcastType.style(
                           context,
-                          size: 16,
-                          weight: FontWeight.w800,
+                          size: 15.5,
+                          weight: FontWeight.w700,
+                          color: LiveLuxuryPalette.textPrimary,
                         ),
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceAlt,
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(10)),
-                        border: Border.all(color: AppColors.cardBorder),
-                      ),
-                      child: Text(
-                        '${filtered.length}',
-                        style: LiveBroadcastType.style(
-                          context,
-                          size: 11.5,
-                          weight: FontWeight.w800,
-                          color: AppColors.accentCyan,
-                          tabular: true,
-                        ),
+                    Text(
+                      ar ? '${filtered.length} قناة' : '${filtered.length} CH',
+                      style: LiveBroadcastType.style(
+                        context,
+                        size: 12,
+                        weight: FontWeight.w500,
+                        color: LiveLuxuryPalette.silverMuted,
+                        tabular: true,
                       ),
                     ),
                   ],
@@ -1119,7 +1104,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                 const SizedBox(height: 12),
               ],
 
-              // Instant Search Input
+              // Velvet Hairline Search Input
               SizedBox(
                 height: 42,
                 child: TextField(
@@ -1129,10 +1114,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                     context,
                     size: 13,
                     weight: FontWeight.w500,
+                    color: LiveLuxuryPalette.textPrimary,
                   ),
+                  cursorColor: Colors.white70,
                   decoration: InputDecoration(
                     filled: true,
-                    fillColor: AppColors.surfaceAlt,
+                    fillColor: LiveLuxuryPalette.salonTile,
                     hintText: ar
                         ? 'ابحث عن قناة، برنامج، أو مباراة...'
                         : 'Search channel, show, or live match...',
@@ -1140,12 +1127,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                       context,
                       size: 12.5,
                       weight: FontWeight.w400,
-                      color: AppColors.textTertiary,
+                      color: LiveLuxuryPalette.silverMuted,
                     ),
                     prefixIcon: const Icon(
                       Icons.search_rounded,
-                      size: 19,
-                      color: AppColors.textSecondary,
+                      size: 18,
+                      color: LiveLuxuryPalette.silverMuted,
                     ),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
@@ -1155,98 +1142,131 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                             },
                             icon: const Icon(
                               Icons.close_rounded,
-                              size: 17,
-                              color: AppColors.textSecondary,
+                              size: 16,
+                              color: LiveLuxuryPalette.silverSecondary,
                             ),
                           )
                         : null,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                     enabledBorder: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(color: AppColors.divider),
+                      borderRadius: BorderRadius.all(Radius.circular(13)),
+                      borderSide: BorderSide(
+                        color: LiveLuxuryPalette.hairlineSubtle,
+                        width: 0.5,
+                      ),
                     ),
                     focusedBorder: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide:
-                          BorderSide(color: AppColors.primary, width: 1.4),
+                      borderRadius: BorderRadius.all(Radius.circular(13)),
+                      borderSide: BorderSide(
+                        color: LiveLuxuryPalette.hairlineMedium,
+                        width: 0.8,
+                      ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Category Filter Chips
-              SizedBox(
-                height: 34,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: LiveCategory.values.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 7),
-                  itemBuilder: (BuildContext context, int index) {
-                    final LiveCategory cat = LiveCategory.values[index];
-                    final bool selected = _selectedCategory == cat;
-                    return InkWell(
-                      onTap: () {
-                        unawaited(HapticFeedback.selectionClick());
-                        setState(() => _selectedCategory = cat);
-                      },
-                      borderRadius: const BorderRadius.all(Radius.circular(18)),
-                      child: AnimatedContainer(
-                        duration: AppDurations.normal,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          gradient: selected
-                              ? const LinearGradient(
-                                  colors: <Color>[
-                                    AppColors.primary,
-                                    AppColors.primaryDark,
-                                  ],
-                                )
-                              : null,
-                          color: selected ? null : AppColors.surfaceAlt,
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(18)),
-                          border: Border.all(
-                            color: selected
-                                ? AppColors.primaryLight
-                                : AppColors.cardBorder,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Icon(
-                              cat.icon,
-                              size: 14,
-                              color: selected
-                                  ? Colors.white
-                                  : AppColors.textSecondary,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              cat.label(context, l10n),
-                              style: LiveBroadcastType.style(
-                                context,
-                                size: 11.5,
-                                weight:
-                                    selected ? FontWeight.w800 : FontWeight.w600,
-                                color: selected
-                                    ? Colors.white
-                                    : AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
                 ),
               ),
             ],
           ),
         ),
 
-        // Filtered Channels List
+        // Seamless Edge-Faded Category Strip (Mouse + Touch Drag)
+        SizedBox(
+          height: 34,
+          child: ShaderMask(
+            shaderCallback: (Rect bounds) {
+              return LinearGradient(
+                begin: ar ? Alignment.centerRight : Alignment.centerLeft,
+                end: ar ? Alignment.centerLeft : Alignment.centerRight,
+                stops: const <double>[0.0, 0.025, 0.90, 1.0],
+                colors: const <Color>[
+                  Colors.transparent,
+                  Colors.white,
+                  Colors.white,
+                  Colors.transparent,
+                ],
+              ).createShader(bounds);
+            },
+            blendMode: BlendMode.dstIn,
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(
+                dragDevices: const <PointerDeviceKind>{
+                  PointerDeviceKind.touch,
+                  PointerDeviceKind.mouse,
+                  PointerDeviceKind.trackpad,
+                },
+              ),
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 24, 0),
+                itemCount: LiveCategory.values.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (BuildContext context, int index) {
+                  final LiveCategory cat = LiveCategory.values[index];
+                  final bool selected = _selectedCategory == cat;
+                  final Color iconColor = selected
+                      ? (cat == LiveCategory.favorites
+                          ? LiveLuxuryPalette.rubyLive
+                          : LiveLuxuryPalette.textPrimary)
+                      : LiveLuxuryPalette.silverMuted;
+
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        unawaited(HapticFeedback.selectionClick());
+                        setState(() => _selectedCategory = cat);
+                      },
+                      borderRadius: const BorderRadius.all(Radius.circular(17)),
+                      child: AnimatedContainer(
+                        duration: AppDurations.normal,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? const Color(0xFF22222A)
+                              : LiveLuxuryPalette.salonTile,
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(17)),
+                          border: Border.all(
+                            color: selected
+                                ? Colors.white.withValues(alpha: 0.22)
+                                : LiveLuxuryPalette.hairlineSubtle,
+                            width: selected ? 0.7 : 0.5,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(cat.icon, size: 13.5, color: iconColor),
+                            const SizedBox(width: 6),
+                            Text(
+                              cat.label(context, l10n),
+                              style: LiveBroadcastType.style(
+                                context,
+                                size: 11.5,
+                                weight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: selected
+                                    ? LiveLuxuryPalette.textPrimary
+                                    : LiveLuxuryPalette.silverSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // Filtered Salon Channels List
         Expanded(
           child: filtered.isEmpty
               ? Center(
@@ -1257,10 +1277,10 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                       children: <Widget>[
                         const Icon(
                           Icons.tv_off_rounded,
-                          size: 40,
-                          color: AppColors.textTertiary,
+                          size: 36,
+                          color: LiveLuxuryPalette.silverMuted,
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 12),
                         Text(
                           l10n?.liveNoChannelsInCategory ??
                               (ar
@@ -1269,28 +1289,60 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                           textAlign: TextAlign.center,
                           style: LiveBroadcastType.style(
                             context,
-                            size: 13.5,
-                            weight: FontWeight.w600,
-                            color: AppColors.textSecondary,
+                            size: 13,
+                            weight: FontWeight.w500,
+                            color: LiveLuxuryPalette.silverSecondary,
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        TextButton.icon(
-                          onPressed: () {
-                            _searchCtrl.clear();
-                            setState(() {
-                              _searchQuery = '';
-                              _selectedCategory = LiveCategory.all;
-                            });
-                          },
-                          icon: const Icon(Icons.restart_alt_rounded, size: 17),
-                          label: Text(
-                            ar ? 'عرض جميع القنوات' : 'Show All Channels',
-                            style: LiveBroadcastType.style(
-                              context,
-                              size: 12.5,
-                              weight: FontWeight.w700,
-                              color: AppColors.accentCyan,
+                        const SizedBox(height: 14),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              _searchCtrl.clear();
+                              setState(() {
+                                _searchQuery = '';
+                                _selectedCategory = LiveCategory.all;
+                              });
+                            },
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(18)),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: LiveLuxuryPalette.salonTileActive,
+                                borderRadius:
+                                    const BorderRadius.all(Radius.circular(18)),
+                                border: Border.all(
+                                  color: LiveLuxuryPalette.hairlineMedium,
+                                  width: 0.6,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  const Icon(
+                                    Icons.restart_alt_rounded,
+                                    size: 15,
+                                    color: LiveLuxuryPalette.textPrimary,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    ar
+                                        ? 'عرض جميع القنوات'
+                                        : 'Show All Channels',
+                                    style: LiveBroadcastType.style(
+                                      context,
+                                      size: 12,
+                                      weight: FontWeight.w600,
+                                      color: LiveLuxuryPalette.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -1300,9 +1352,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                 )
               : ListView.separated(
                   padding: EdgeInsetsDirectional.fromSTEB(
-                    12,
+                    14,
                     2,
-                    12,
+                    14,
                     bottomPad,
                   ),
                   itemCount: filtered.length,
@@ -1333,7 +1385,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     );
   }
 
-  // ── 4-Layer Bulletproof Broadcast Player Stage ────────────────────────────
+  // ── 4-Layer Frameless Cinema Player Stage ─────────────────────────────────
   Widget _buildPlayerStage(
     BuildContext stageContext, {
     required bool isFullscreen,
@@ -1356,7 +1408,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             child: Stack(
               fit: StackFit.expand,
               children: <Widget>[
-                // Layer 0: Animated Broadcast Studio Backdrop (Zero Black Box)
+                // Layer 0: Velvet Studio Backdrop (Zero Black Box)
                 AnimatedStudioCanvas(
                   animation: _studioAnimCtrl,
                   channel: _activeChannel,
@@ -1383,7 +1435,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                     ),
                   ),
 
-                // Tap Surface to Toggle HUD
+                // Tap Surface to Toggle Frameless HUD
                 GestureDetector(
                   behavior: HitTestBehavior.translucent,
                   onTap: _toggleHudVisibility,
@@ -1398,7 +1450,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                     child: _buildOsdBanner(stageContext),
                   ),
 
-                // Layer 3: Auto-Hide Broadcast HUD Controls
+                // Layer 3: Auto-Hide Frameless Cinema HUD (2600ms)
                 IgnorePointer(
                   ignoring: !_showHud,
                   child: AnimatedOpacity(
@@ -1409,20 +1461,20 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          stops: <double>[0.0, 0.28, 0.68, 1.0],
+                          stops: <double>[0.0, 0.24, 0.72, 1.0],
                           colors: <Color>[
-                            Color(0xBD000000),
-                            Color(0x1F000000),
-                            Color(0x2E000000),
-                            Color(0xD6000000),
+                            Color(0xA6000000),
+                            Color(0x0A000000),
+                            Color(0x14000000),
+                            Color(0xBF000000),
                           ],
                         ),
                       ),
                       child: Padding(
                         padding: EdgeInsetsDirectional.fromSTEB(
-                          isFullscreen ? 24 : 14,
-                          isFullscreen ? 20 : 12,
-                          isFullscreen ? 24 : 14,
+                          isFullscreen ? 26 : 14,
+                          isFullscreen ? 22 : 12,
+                          isFullscreen ? 26 : 14,
                           isFullscreen ? 20 : 10,
                         ),
                         child: Column(
@@ -1433,7 +1485,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                               isFullscreen: isFullscreen,
                               wideHud: wideHud,
                             ),
-                            if (_isVideoInitialized && !_isLoadingStream && !_hasStreamError)
+                            if (_isVideoInitialized &&
+                                !_isLoadingStream &&
+                                !_hasStreamError)
                               _buildHudCenterControls(
                                 stageContext,
                                 wideHud: wideHud,
@@ -1452,11 +1506,11 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                   ),
                 ),
 
-                // Layer 2/4: Independent Floating Unmute Pill (Always Clickable)
+                // Layer 4: Independent Smoked Glass Unmute Pill (Always Clickable)
                 if (_isMuted && _isVideoInitialized && !_hasStreamError)
                   PositionedDirectional(
                     bottom: _showHud ? (isFullscreen ? 68 : 54) : 14,
-                    start: isFullscreen ? 24 : 14,
+                    start: isFullscreen ? 26 : 14,
                     child: FloatingUnmutePill(
                       pulseAnimation: _pulseAnimCtrl,
                       onTap: _unmuteFromPill,
@@ -1477,14 +1531,15 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(14)),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xCC0D0D12),
+            color: LiveLuxuryPalette.velvetHudGlass,
             borderRadius: const BorderRadius.all(Radius.circular(14)),
             border: Border.all(
-              color: _activeChannel.brandPrimary.withValues(alpha: 0.60),
+              color: LiveLuxuryPalette.hairlineMedium,
+              width: 0.6,
             ),
           ),
           child: Row(
@@ -1497,22 +1552,24 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               ),
               const SizedBox(width: 10),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 220),
+                constraints: const BoxConstraints(maxWidth: 230),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Text(
-                      'CH ${_activeChannel.number} • ${_activeChannel.name(ar)}',
+                      'CH ${_activeChannel.number}  •  ${_activeChannel.name(ar)}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: LiveBroadcastType.style(
                         context,
                         size: 12,
-                        weight: FontWeight.w800,
+                        weight: FontWeight.w700,
+                        color: LiveLuxuryPalette.textPrimary,
                         tabular: true,
                       ),
                     ),
+                    const SizedBox(height: 1),
                     Text(
                       current.title(ar),
                       maxLines: 1,
@@ -1520,8 +1577,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                       style: LiveBroadcastType.style(
                         context,
                         size: 10.5,
-                        weight: FontWeight.w500,
-                        color: AppColors.textSecondary,
+                        weight: FontWeight.w400,
+                        color: LiveLuxuryPalette.silverSecondary,
                       ),
                     ),
                   ],
@@ -1548,70 +1605,64 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     return Row(
       children: <Widget>[
         NetworkEmblem(channel: _activeChannel, size: 30, borderRadius: 8),
-        const SizedBox(width: 9),
-        Expanded(
+        const SizedBox(width: 10),
+        Flexible(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                '${_activeChannel.number} • ${_activeChannel.name(ar)}',
+                _activeChannel.name(ar),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: LiveBroadcastType.style(
                   stageContext,
-                  size: wideHud ? 13.5 : 12,
-                  weight: FontWeight.w800,
-                  tabular: true,
+                  size: wideHud ? 14 : 12.5,
+                  weight: FontWeight.w700,
+                  color: LiveLuxuryPalette.textPrimary,
                 ),
               ),
-              if (wideHud)
+              if (isFullscreen)
                 Text(
                   current.title(ar),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: LiveBroadcastType.style(
                     stageContext,
-                    size: 11,
-                    weight: FontWeight.w500,
-                    color: AppColors.textSecondary,
+                    size: 11.5,
+                    weight: FontWeight.w400,
+                    color: LiveLuxuryPalette.silverSecondary,
                   ),
                 ),
             ],
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
 
-        // Pulsing LIVE Badge
+        // Smoked Glass • LIVE Pill (Restrained Ruby Dot)
         AnimatedBuilder(
           animation: _pulseAnimCtrl,
           builder: (BuildContext context, _) {
             return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: <Color>[AppColors.primary, AppColors.primaryLight],
+                color: const Color(0xB8121216),
+                borderRadius: const BorderRadius.all(Radius.circular(999)),
+                border: Border.all(
+                  color: LiveLuxuryPalette.hairlineMedium,
+                  width: 0.55,
                 ),
-                borderRadius: const BorderRadius.all(Radius.circular(20)),
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: AppColors.primary.withValues(
-                      alpha: 0.35 + 0.35 * _pulseAnimCtrl.value,
-                    ),
-                    blurRadius: 12,
-                  ),
-                ],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Container(
-                    width: 6,
-                    height: 6,
+                    width: 5.5,
+                    height: 5.5,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withValues(
-                        alpha: 0.55 + 0.45 * _pulseAnimCtrl.value,
+                      color: LiveLuxuryPalette.rubyLive.withValues(
+                        alpha: 0.65 + 0.35 * _pulseAnimCtrl.value,
                       ),
                     ),
                   ),
@@ -1620,9 +1671,10 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                     ar ? 'مباشر' : 'LIVE',
                     style: LiveBroadcastType.style(
                       stageContext,
-                      size: 10.5,
-                      weight: FontWeight.w800,
-                      letterSpacing: 0.6,
+                      size: 10,
+                      weight: FontWeight.w700,
+                      color: LiveLuxuryPalette.textPrimary,
+                      letterSpacing: ar ? 0.0 : 0.7,
                     ),
                   ),
                 ],
@@ -1630,73 +1682,82 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             );
           },
         ),
+        const Spacer(),
 
-        // Live Viewers Counter
+        // Calm Platinum Viewers Readout (Zero Neon Cyan)
         if (wideHud) ...<Widget>[
-          const SizedBox(width: 7),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0x99111111),
-              borderRadius: const BorderRadius.all(Radius.circular(20)),
-              border: Border.all(color: AppColors.cardBorder),
+              color: const Color(0x9E101014),
+              borderRadius: const BorderRadius.all(Radius.circular(999)),
+              border: Border.all(
+                color: LiveLuxuryPalette.hairlineSubtle,
+                width: 0.5,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 const Icon(
-                  Icons.visibility_rounded,
+                  Icons.visibility_outlined,
                   size: 13,
-                  color: AppColors.accentCyan,
+                  color: LiveLuxuryPalette.silverSecondary,
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 5),
                 Text(
                   _formattedViewers,
                   style: LiveBroadcastType.style(
                     stageContext,
-                    size: 10.5,
-                    weight: FontWeight.w700,
+                    size: 11,
+                    weight: FontWeight.w500,
+                    color: const Color(0xFFC4C4CE),
                     tabular: true,
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
         ],
 
-        // Quality Selector Pill
-        const SizedBox(width: 7),
-        InkWell(
-          onTap: () => _openQualitySheet(stageContext),
-          borderRadius: const BorderRadius.all(Radius.circular(20)),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xAD141418),
-              borderRadius: const BorderRadius.all(Radius.circular(20)),
-              border: Border.all(
-                color: AppColors.gold.withValues(alpha: 0.55),
+        // Smoked Glass Quality Selector (Soft Champagne Typography)
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () => _openQualitySheet(stageContext),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xB8121216),
+                borderRadius: const BorderRadius.all(Radius.circular(999)),
+                border: Border.all(
+                  color: LiveLuxuryPalette.hairlineMedium,
+                  width: 0.6,
+                ),
               ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  qualityLabel,
-                  style: LiveBroadcastType.style(
-                    stageContext,
-                    size: 10.5,
-                    weight: FontWeight.w800,
-                    color: AppColors.gold,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    qualityLabel,
+                    style: LiveBroadcastType.style(
+                      stageContext,
+                      size: 10.5,
+                      weight: FontWeight.w700,
+                      color: LiveLuxuryPalette.champagneSoft,
+                      letterSpacing: 0.3,
+                      tabular: true,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 3),
-                const Icon(
-                  Icons.tune_rounded,
-                  size: 12,
-                  color: AppColors.gold,
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.tune_rounded,
+                    size: 11.5,
+                    color: LiveLuxuryPalette.champagneSoft,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1706,7 +1767,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           _HudCircleBtn(
             icon: Icons.close_rounded,
             size: 34,
-            iconSize: 18,
+            iconSize: 17.5,
             onTap: () => Navigator.of(stageContext).maybePop(),
           ),
         ],
@@ -1723,23 +1784,23 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       children: <Widget>[
         _HudCircleBtn(
           icon: Icons.skip_previous_rounded,
-          size: wideHud ? 44 : 38,
-          iconSize: wideHud ? 23 : 20,
+          size: wideHud ? 42 : 38,
+          iconSize: wideHud ? 22 : 19,
           onTap: () => _stepChannel(-1),
         ),
-        SizedBox(width: wideHud ? 22 : 16),
+        SizedBox(width: wideHud ? 24 : 16),
         _HudCircleBtn(
           icon: _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-          size: wideHud ? 58 : 48,
-          iconSize: wideHud ? 30 : 26,
+          size: wideHud ? 56 : 48,
+          iconSize: wideHud ? 28 : 24,
           isPrimary: true,
           onTap: _togglePlayPause,
         ),
-        SizedBox(width: wideHud ? 22 : 16),
+        SizedBox(width: wideHud ? 24 : 16),
         _HudCircleBtn(
           icon: Icons.skip_next_rounded,
-          size: wideHud ? 44 : 38,
-          iconSize: wideHud ? 23 : 20,
+          size: wideHud ? 42 : 38,
+          iconSize: wideHud ? 22 : 19,
           onTap: () => _stepChannel(1),
         ),
       ],
@@ -1759,31 +1820,24 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        // Glowing Live Broadcast Progress Edge
+        // Ultra-Thin 2px Monochrome Luxury Progress Hairline (Zero Rainbow)
         ClipRRect(
-          borderRadius: const BorderRadius.all(Radius.circular(3)),
+          borderRadius: const BorderRadius.all(Radius.circular(2)),
           child: Container(
-            height: 3.5,
+            height: 2.0,
             width: double.infinity,
-            color: Colors.white.withValues(alpha: 0.18),
+            color: Colors.white.withValues(alpha: 0.14),
             alignment: AlignmentDirectional.centerStart,
             child: FractionallySizedBox(
               widthFactor: progress,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: <Color>[
-                      _activeChannel.brandPrimary,
-                      AppColors.primaryLight,
-                      AppColors.accentCyan,
-                    ],
-                  ),
-                ),
+              child: const ColoredBox(
+                color: Color(0xEBFFFFFF),
+                child: SizedBox.expand(),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Row(
           children: <Widget>[
             _HudCircleBtn(
@@ -1793,25 +1847,26 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                       ? Icons.volume_down_rounded
                       : Icons.volume_up_rounded),
               size: 34,
-              iconSize: 18,
+              iconSize: 17.5,
               onTap: _toggleMute,
             ),
             if (wideHud) ...<Widget>[
               SizedBox(
-                width: 92,
+                width: 90,
                 height: 28,
                 child: SliderTheme(
                   data: SliderTheme.of(stageContext).copyWith(
-                    trackHeight: 3,
+                    trackHeight: 2.2,
                     thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 5.5,
+                      enabledThumbRadius: 5.0,
                     ),
                     overlayShape: const RoundSliderOverlayShape(
-                      overlayRadius: 11,
+                      overlayRadius: 10,
                     ),
-                    activeTrackColor: AppColors.accentCyan,
-                    inactiveTrackColor: Colors.white.withValues(alpha: 0.24),
+                    activeTrackColor: Colors.white.withValues(alpha: 0.88),
+                    inactiveTrackColor: Colors.white.withValues(alpha: 0.20),
                     thumbColor: Colors.white,
+                    overlayColor: Colors.white.withValues(alpha: 0.12),
                   ),
                   child: Slider(
                     value: _isMuted ? 0.0 : _volume,
@@ -1824,57 +1879,66 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             EqualizerBars(
               animation: _eqAnimCtrl,
               isActive: audioActive,
-              height: 13,
+              color: const Color(0xFFD8D8E2),
+              height: 12,
+              barWidth: 1.8,
             ),
             const Spacer(),
 
-            // Go Live Edge Pill
-            InkWell(
-              onTap: _jumpToLiveEdge,
-              borderRadius: const BorderRadius.all(Radius.circular(16)),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: const BorderRadius.all(Radius.circular(16)),
-                  border: Border.all(
-                    color: AppColors.accentCyan.withValues(alpha: 0.45),
+            // Smoked Glass Live Edge Pill
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: _jumpToLiveEdge,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
                   ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Container(
-                      width: 5.5,
-                      height: 5.5,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.accentCyan,
-                      ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xB8121216),
+                    borderRadius: const BorderRadius.all(Radius.circular(999)),
+                    border: Border.all(
+                      color: LiveLuxuryPalette.hairlineSubtle,
+                      width: 0.6,
                     ),
-                    const SizedBox(width: 5),
-                    Text(
-                      ar ? 'اللحظة الحية' : 'GO LIVE',
-                      style: LiveBroadcastType.style(
-                        stageContext,
-                        size: 10,
-                        weight: FontWeight.w800,
-                        color: Colors.white,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Container(
+                        width: 5,
+                        height: 5,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: LiveLuxuryPalette.rubyLive,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 5),
+                      Text(
+                        ar ? 'اللحظة الحية' : 'LIVE EDGE',
+                        style: LiveBroadcastType.style(
+                          stageContext,
+                          size: 10,
+                          weight: FontWeight.w700,
+                          color: const Color(0xFFE6E6EE),
+                          letterSpacing: ar ? 0.0 : 0.4,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
             const SizedBox(width: 7),
 
-            // Fit / Cover Toggle
+            // Fit / Cover Aspect Ratio Toggle
             _HudCircleBtn(
               icon: _fillScreen
                   ? Icons.fit_screen_rounded
                   : Icons.aspect_ratio_rounded,
               size: 34,
-              iconSize: 17,
+              iconSize: 16.5,
               onTap: () {
                 setState(() => _fillScreen = !_fillScreen);
                 _notifyPlayerSync();
@@ -1889,7 +1953,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                   ? Icons.fullscreen_exit_rounded
                   : Icons.fullscreen_rounded,
               size: 34,
-              iconSize: 19,
+              iconSize: 18.5,
               onTap: isFullscreen
                   ? () => Navigator.of(stageContext).maybePop()
                   : _openFullscreenPlayer,
@@ -1902,7 +1966,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  HUD Glass Circle Button & Immersive Fullscreen Stage
+//  Smoked Obsidian Liquid-Glass HUD Circle Button & Fullscreen Stage
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _HudCircleBtn extends StatelessWidget {
@@ -1928,29 +1992,30 @@ class _HudCircleBtn extends StatelessWidget {
         onTap: onTap,
         child: ClipOval(
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
               width: size,
               height: size,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: isPrimary
-                    ? const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: <Color>[
-                          AppColors.primary,
-                          AppColors.primaryDark,
-                        ],
-                      )
-                    : null,
-                color: isPrimary ? null : const Color(0x99141418),
+                color: isPrimary
+                    ? const Color(0xCF14141A)
+                    : LiveLuxuryPalette.velvetHudGlass,
                 border: Border.all(
-                  color: isPrimary
-                      ? Colors.white.withValues(alpha: 0.45)
-                      : Colors.white.withValues(alpha: 0.22),
+                  color: Colors.white.withValues(
+                    alpha: isPrimary ? 0.22 : 0.14,
+                  ),
+                  width: isPrimary ? 0.75 : 0.6,
                 ),
-                boxShadow: isPrimary ? AppShadows.glow : null,
+                boxShadow: isPrimary
+                    ? const <BoxShadow>[
+                        BoxShadow(
+                          color: Color(0x73000000),
+                          blurRadius: 18,
+                          offset: Offset(0, 6),
+                        ),
+                      ]
+                    : null,
               ),
               alignment: Alignment.center,
               child: Icon(icon, size: iconSize, color: Colors.white),
