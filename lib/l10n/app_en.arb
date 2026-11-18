@@ -1,0 +1,282 @@
+{
+  "@@locale": "en",
+  "appName": "Sky Live",
+  "tagline": "Stories, on demand.",
+
+  "navHome": "Home",
+  "navMovies": "Movies",
+  "navSeries": "Series",
+  "navKids": "Kids",
+  "navMe": "Me",
+
+  "tabForYou": "For You",
+  "tabAnime": "Anime",
+
+  "actionPlay": "Play",
+  "actionDownload": "Download",
+  "actionDownloaded": "Downloaded",
+  "actionMyList": "My List",
+  "actionInMyList": "On My List",
+  "actionRate": "Rate",
+  "actionShare": "Share",
+  "actionCast": "Cast",
+  "snackAddedToMyList": "Added to My List",
+  "snackRemovedFromMyList": "Removed from My List",
+  "snackDownloadStarted": "Download started",
+  "snackDownloadRemoved": "Download removed",
+  "snackShareLink": "Share link copied for {title}",
+  "@snackShareLink": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "snackCastUnavailable": "No cast device found",
+  "snackThanksForRating": "Thanks for rating",
+  "snackComingSoon": "Coming soon",
+  "snackSettingsSaved": "Settings saved",
+  "detailRateTitle": "Rate this title",
+  "rateLove": "Loved it",
+  "rateLike": "Liked it",
+  "rateNotForMe": "Not for me",
+  "actionInfo": "Info",
+  "actionSeeAll": "See all",
+  "actionSwitch": "Switch",
+  "actionContinue": "Continue",
+  "actionAdd": "Add",
+  "actionClose": "Close",
+  "actionCancel": "Cancel",
+
+  "search": "Search",
+  "searchHint": "Channel, movie, series, person…",
+  "searchRecent": "Recent",
+  "searchTrending": "Trending Searches",
+  "searchEmptyTitle": "Oops. We don't have that yet.",
+  "searchEmptyHint": "Try a different title, actor, or genre.",
+
+  "browseGenre": "Genre",
+  "browseRegion": "Region",
+  "browseYear": "Year",
+  "browseSort": "Sort by",
+  "browseAll": "All",
+  "sortNewlyAdded": "Newly Added",
+  "sortTopRated": "Top Rated",
+  "sortReleaseDate": "Release Date",
+
+  "rowTopPicks": "Top Picks",
+  "rowNewReleases": "New Releases",
+  "rowTrending": "Trending Now",
+  "rowContinueWatching": "Continue Watching",
+  "rowCriticsCorner": "Critics' Corner",
+  "rowTopMovies": "Top Movies",
+  "rowNewMovies": "New Movies",
+  "rowActionThriller": "Action & Thrillers",
+  "rowDramaPicks": "Drama Picks",
+  "rowTopSeries": "Top Series",
+  "rowNewSeries": "New Series",
+  "rowMystery": "Mystery & Thrillers",
+  "rowDocumentaries": "Documentaries",
+  "rowForLittleOnes": "For Little Ones",
+  "rowBedtime": "Bedtime Stories",
+  "rowLearnPlay": "Learn & Play",
+  "rowAllTitles": "All Titles",
+  "rowBrowseByStudio": "Browse by Studio",
+
+  "kindMovie": "Movie",
+  "kindSeries": "Series",
+  "kindKids": "Kids",
+
+  "detailEpisodes": "Episodes",
+  "detailAbout": "About",
+  "detailMoreLikeThis": "More Like This",
+  "detailCast": "Cast & Crew",
+  "detailSeason": "Season {n}",
+  "@detailSeason": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "aboutGenres": "Genres",
+  "aboutYear": "Year",
+  "aboutRuntime": "Runtime",
+  "aboutAudio": "Audio",
+  "aboutSubtitles": "Subtitles",
+  "aboutCastLabel": "Cast",
+
+  "playerLock": "Lock",
+  "playerNext": "Next",
+  "playerExit": "Exit",
+  "playerBrightness": "Brightness",
+  "playerVolume": "Volume",
+  "playerSpeed": "Playback Speed",
+  "playerQuality": "Quality",
+  "playerSubtitles": "Subtitles",
+  "playerAudio": "Audio",
+  "playerAspect": "Aspect Ratio",
+  "playerAspectFit": "Fit",
+  "playerQualityAuto": "Auto",
+
+  "meStandardProfile": "Standard profile",
+  "meKidsProfile": "Kids profile",
+  "meSwitch": "Switch",
+  "tileDownloads": "Downloads",
+  "tileHistory": "History",
+  "meWhosWatching": "Who's watching?",
+  "meWhosWatchingHint": "Tap a profile to start watching",
+  "meAddProfile": "Add Profile",
+  "meKidsBadge": "KIDS",
+
+  "menuSettings": "Settings",
+  "menuConnectTV": "Connect to TV",
+  "menuParental": "Parental Controls",
+  "menuLanguage": "App Language",
+  "menuNotifications": "Notifications",
+  "menuHelp": "Help Center",
+  "menuAbout": "About Sky Live",
+  "menuLogout": "Log out",
+  "logoutConfirm": "Sign out of this profile?",
+
+  "myListTitle": "My List",
+  "myListEmptyTitle": "Nothing here yet",
+  "myListEmptyHint": "Tap the + icon on a title to add it here.",
+
+  "downloadsTitle": "Downloads",
+  "downloadsNote": "Downloads stay on this device and expire after 30 days.",
+  "downloadsReady": "Ready to watch",
+  "downloadsDownloading": "Downloading…",
+  "downloadsEmptyTitle": "No downloads yet",
+  "downloadsEmptyHint": "Tap the download icon on any title to save it here.",
+  "downloadsClearTitle": "Clear all downloads?",
+  "downloadsClearMessage": "This will remove all downloaded titles from this device.",
+  "dialogCancel": "Cancel",
+  "dialogConfirm": "Confirm",
+
+  "premiumTitle": "Premium",
+  "premiumUnlock": "Unlock Sky Live Premium",
+  "premiumPitch": "4K HDR, no ads, 4 simultaneous screens, offline downloads.",
+  "premiumChoose": "Choose a plan",
+  "premiumWhat": "What you get",
+  "premiumFeature4k": "Up to 4K HDR",
+  "premiumFeatureDevices": "Watch on up to 4 devices",
+  "premiumFeatureOffline": "Download and watch offline",
+  "premiumFeatureNoAds": "No ads, ever",
+  "premiumFeatureLangs": "Multi-language audio & subtitles",
+  "premiumContinueWith": "Continue with {plan}",
+  "@premiumContinueWith": {
+    "placeholders": {
+      "plan": { "type": "String" }
+    }
+  },
+  "premiumCancel": "You can cancel any time from settings.",
+  "premiumGoCta": "Go Premium",
+  "premiumGoSub": "4K + no ads + simultaneous streams",
+  "planBasicName": "Basic",
+  "planBasicDesc": "720p · 1 screen",
+  "planStandardName": "Standard",
+  "planStandardDesc": "Full HD · 2 screens · Downloads",
+  "planPremiumName": "Premium",
+  "planPremiumDesc": "4K HDR · 4 screens · Downloads",
+  "planPerMonth": "per month",
+  "premiumRedirect": "Redirecting to billing…",
+
+  "settingsTitle": "Settings",
+  "settingsGroupPlayback": "Playback",
+  "settingsGroupDownloads": "Downloads",
+  "settingsGroupApp": "App",
+  "settingsAppLanguage": "App Language",
+  "settingsVideoQuality": "Video Quality",
+  "settingsSubtitleStyle": "Subtitle Style",
+  "settingsPreferredAudio": "Preferred Audio",
+  "settingsDataSaver": "Data Saver",
+  "settingsAutoplayNext": "Auto-play Next",
+  "settingsAutoplayPreviews": "Auto-play Previews",
+  "settingsDownloadLocation": "Download Location",
+  "settingsDownloadLocationValue": "Internal · 14.3 GB free",
+  "settingsDownloadQuality": "Download Quality",
+  "settingsWifiOnly": "Download on Wi-Fi only",
+  "settingsClearDownloads": "Clear Downloads",
+  "settingsManageDevices": "Manage Devices",
+  "settingsAboutApp": "About Sky Live",
+  "settingsAppVersion": "Version {version}",
+  "@settingsAppVersion": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "settingsClearCache": "Clear Cache",
+  "settingsCacheSize": "{mb} MB",
+  "@settingsCacheSize": {
+    "placeholders": {
+      "mb": { "type": "int" }
+    }
+  },
+  "settingsValueAuto": "Auto",
+  "settingsValueStandard": "Standard",
+  "settingsValueHigh": "High",
+  "settingsValueDataSaver": "Data Saver",
+  "audioFrench": "French",
+  "audioSpanish": "Spanish",
+  "subtitleStyleDefault": "Default",
+  "subtitleStyleLarge": "Large",
+  "subtitleStyleSmall": "Small",
+
+  "languageDialogTitle": "App Language",
+  "languageSystem": "Use device language",
+  "languageEnglish": "English",
+  "languageArabic": "العربية",
+
+  "qualityHd": "HD",
+
+  "kidsTopicLearn": "Learn",
+  "kidsTopicAdventure": "Adventure",
+  "kidsTopicSongs": "Songs",
+  "kidsTopicStories": "Stories",
+  "kidsTopicAnimals": "Animals",
+  "kidsTopicBedtime": "Bedtime",
+
+  "navLive": "Live TV",
+  "navGames": "Games",
+
+  "liveTvTitle": "Live TV",
+  "liveCatAll": "All",
+  "liveCatNews": "News",
+  "liveCatSports": "Sports",
+  "liveCatMovies": "Movies",
+  "liveCatEntertainment": "Entertainment",
+  "liveCatKids": "Kids",
+  "liveCatMusic": "Music",
+  "liveCatDocs": "Documentary",
+  "channelGenericName": "Channel {n}",
+  "@channelGenericName": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "channelNowGeneric": "On now",
+
+  "gamesTitle": "Games",
+  "gamesFeaturedTitle": "Daily Challenge",
+  "gamesFeaturedSub": "Win coins by playing today",
+  "gamesSectionTrending": "Trending",
+  "gamesSectionCasual": "Casual",
+  "gamesSectionPuzzle": "Puzzle",
+  "gameGenericName": "Game {n}",
+  "@gameGenericName": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+
+  "rowTop10": "Top 10 Today",
+  "rowTopChannels": "Top Live Channels",
+  "rowNetworks": "Networks",
+  "networkLabel": "Studio {n}",
+  "@networkLabel": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "liveTvGuide": "TV Guide",
+  "liveNoGuideAvailable": "No guide available",
+  "liveNoChannelsInCategory": "No channels available in this category",
+  "homeContentComingSoon": "Content coming soon",
+  "homeContentAdminPanel": "Movies and series will be added from the admin panel",
+  "actionWatchNow": "Watch Now"
+}
