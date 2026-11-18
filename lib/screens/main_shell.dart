@@ -1,13 +1,20 @@
-﻿import 'package:flutter/material.dart';
+// ─────────────────────────────────────────────────────────────
+//  main_shell.dart — SkyLive Redesign (5-tab navigation)
+// ─────────────────────────────────────────────────────────────
+
+import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
 import '../models/title.dart';
 import '../theme/app_theme.dart';
 import '../l10n/app_localizations.dart';
+import 'browse_screen.dart';
+import 'downloads_screen.dart';
 import 'home_screen.dart';
 import 'live_tv_screen.dart';
 import 'me_screen.dart';
 
+// ─── Shell ───────────────────────────────────────────────────
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -34,7 +41,9 @@ class _MainShellState extends State<MainShell> {
 
   List<Widget> _pages() => [
         const HomeScreen(),
+        BrowseScreen(kind: TitleKind.movie),
         const LiveTvScreen(),
+        const DownloadsScreen(),
         MeScreen(
           active: _active,
           onSwitchProfile: () => setState(() {}),
@@ -68,6 +77,7 @@ class _MainShellState extends State<MainShell> {
   }
 }
 
+// ─── Bottom Navigation Bar ───────────────────────────────────
 class _BottomBar extends StatelessWidget {
   final int index;
   final ValueChanged<int> onTap;
@@ -78,30 +88,32 @@ class _BottomBar extends StatelessWidget {
     final s = AppLocalizations.of(context);
     final items = [
       _NavItem(Icons.home_filled, Icons.home_outlined, s.navHome),
+      _NavItem(Icons.explore, Icons.explore_outlined, s.navMovies),
       _NavItem(Icons.live_tv, Icons.live_tv_outlined, s.navLive),
+      _NavItem(Icons.download_rounded, Icons.download_outlined, s.downloadsTitle),
       _NavItem(Icons.person, Icons.person_outline, s.navMe),
     ];
     return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF0A0A0A),
+      decoration: const BoxDecoration(
+        color: Color(0xFF050505),
         border: Border(
           top: BorderSide(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: Color(0x0FFFFFFF),
             width: 0.5,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+            color: Color(0x80000000),
+            blurRadius: 24,
+            offset: Offset(0, -8),
           ),
         ],
       ),
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 64,
+          height: 60,
           child: Row(
             children: [
               for (int i = 0; i < items.length; i++)
@@ -111,22 +123,23 @@ class _BottomBar extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Glowing indicator dot
+                        // ─ Glowing indicator dot ─
                         AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
+                          duration: const Duration(milliseconds: 200),
                           curve: Curves.easeOutCubic,
-                          width: i == index ? 20 : 0,
+                          width: i == index ? 18 : 0,
                           height: 3,
-                          margin: const EdgeInsets.only(bottom: 6),
+                          margin: const EdgeInsets.only(bottom: 3),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(2),
-                            color: i == index ? AppColors.primary : Colors.transparent,
+                            color: i == index
+                                ? AppColors.primary
+                                : Colors.transparent,
                             boxShadow: i == index
-                                ? [
+                                ? const [
                                     BoxShadow(
-                                      color: AppColors.primary.withValues(alpha: 0.6),
-                                      blurRadius: 8,
-                                      spreadRadius: 1,
+                                      color: Color(0x99E50914),
+                                      blurRadius: 10,
                                     ),
                                   ]
                                 : null,
@@ -139,20 +152,19 @@ class _BottomBar extends StatelessWidget {
                           size: 22,
                           color: i == index
                               ? Colors.white
-                              : AppColors.textTertiary,
+                              : const Color(0xFF555555),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           items[i].label,
                           style: TextStyle(
                             color: i == index
                                 ? Colors.white
-                                : AppColors.textTertiary,
-                            fontSize: 10.5,
+                                : const Color(0xFF555555),
+                            fontSize: 10,
                             fontWeight: i == index
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            letterSpacing: 0.3,
+                                ? FontWeight.w600
+                                : FontWeight.w400,
                           ),
                         ),
                       ],
@@ -167,6 +179,7 @@ class _BottomBar extends StatelessWidget {
   }
 }
 
+// ─── Nav Item Model ──────────────────────────────────────────
 class _NavItem {
   final IconData active;
   final IconData inactive;
