@@ -3028,3 +3028,193 @@ class EpgChannelTile extends StatelessWidget {
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  8. QualityPickerSheet — Broadcast Stream Resolution Selector
+// ─────────────────────────────────────────────────────────────────────────────
+
+class QualityPickerSheet extends StatelessWidget {
+  final String selectedQuality;
+  final ValueChanged<String> onSelect;
+
+  const QualityPickerSheet({
+    super.key,
+    required this.selectedQuality,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool ar = LiveBroadcastType.isAr(context);
+    final AppLocalizations? l10n =
+        Localizations.of<AppLocalizations>(context, AppLocalizations);
+
+    final List<({String id, String title, String sub, String badge})> options =
+        <({String id, String title, String sub, String badge})>[
+      (
+        id: 'Auto',
+        title: l10n?.playerQualityAuto ?? (ar ? 'تلقائي ذكي' : 'Auto Adaptive'),
+        sub: ar
+            ? 'أفضل استقرار وزمن استجابة منخفض'
+            : 'Instant start & zero buffering',
+        badge: 'SMART',
+      ),
+      (
+        id: '4K HDR',
+        title: ar ? 'فائق الوضوح 4K UHD' : '4K Ultra HD HDR',
+        sub: '2160p60 • HDR10 • 24 Mbps',
+        badge: '4K',
+      ),
+      (
+        id: '1080p FHD',
+        title: ar ? 'عالي الوضوح الكامل' : '1080p Full HD',
+        sub: '1080p60 • High Frame Rate • 8.5 Mbps',
+        badge: 'FHD',
+      ),
+      (
+        id: '720p HD',
+        title: ar ? 'جودة توفير البيانات' : '720p HD Data Saver',
+        sub: '720p • Smooth Mobile Stream • 4 Mbps',
+        badge: 'HD',
+      ),
+    ];
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: const BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.all(Radius.circular(2)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: <Widget>[
+                const Icon(
+                  Icons.hd_rounded,
+                  color: AppColors.accentCyan,
+                  size: 22,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n?.playerQuality ??
+                        (ar ? 'جودة البث المباشر' : 'Stream Quality'),
+                    style: LiveBroadcastType.style(
+                      context,
+                      size: 17,
+                      weight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            for (final opt in options)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: InkWell(
+                  onTap: () {
+                    onSelect(opt.id);
+                    Navigator.of(context).pop();
+                  },
+                  borderRadius: const BorderRadius.all(Radius.circular(14)),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: selectedQuality == opt.id
+                          ? AppColors.primary.withValues(alpha: 0.16)
+                          : AppColors.surfaceAlt,
+                      borderRadius: const BorderRadius.all(Radius.circular(14)),
+                      border: Border.all(
+                        color: selectedQuality == opt.id
+                            ? AppColors.primary
+                            : AppColors.cardBorder,
+                      ),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        Container(
+                          width: 48,
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          decoration: BoxDecoration(
+                            color: opt.id == '4K HDR'
+                                ? AppColors.gold.withValues(alpha: 0.18)
+                                : AppColors.surfaceHigh,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(8)),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            opt.badge,
+                            style: GoogleFonts.outfit(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w900,
+                              color: opt.id == '4K HDR'
+                                  ? AppColors.gold
+                                  : AppColors.accentCyan,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                opt.title,
+                                style: LiveBroadcastType.style(
+                                  context,
+                                  size: 14,
+                                  weight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                opt.sub,
+                                style: LiveBroadcastType.style(
+                                  context,
+                                  size: 11.5,
+                                  weight: FontWeight.w400,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (selectedQuality == opt.id)
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: AppColors.primaryLight,
+                            size: 20,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
