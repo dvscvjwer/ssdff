@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // ─────────────────────────────────────────────────
@@ -271,6 +271,20 @@ class AppTextStyles {
         color: AppColors.textPrimary,
         letterSpacing: 0.3,
       );
+
+  /// Arabic typography helper — Readex Pro (Shahid VIP inspired)
+  static TextStyle arabic({
+    double fontSize = 15,
+    FontWeight fontWeight = FontWeight.w500,
+    Color color = AppColors.textPrimary,
+    double height = 1.5,
+  }) =>
+      GoogleFonts.readexPro(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+        height: height,
+      );
 }
 
 // ─────────────────────────────────────────────────
@@ -367,11 +381,18 @@ class AppDurations {
 // ─────────────────────────────────────────────────
 //  buildDarkTheme — OLED cinema experience
 // ─────────────────────────────────────────────────
-ThemeData buildDarkTheme() {
+ThemeData buildDarkTheme({Locale? locale}) {
   final base      = ThemeData.dark(useMaterial3: true);
-  final textTheme = GoogleFonts.interTextTheme(base.textTheme).apply(
+  final isArabic  = locale?.languageCode == 'ar';
+  final rawTheme  = isArabic
+      ? GoogleFonts.readexProTextTheme(base.textTheme)
+      : GoogleFonts.interTextTheme(base.textTheme);
+  final textTheme = rawTheme.apply(
     bodyColor:    AppColors.textPrimary,
     displayColor: AppColors.textPrimary,
+    fontFamilyFallback: [
+      GoogleFonts.readexPro().fontFamily ?? 'Readex Pro',
+    ],
   );
 
   return base.copyWith(
