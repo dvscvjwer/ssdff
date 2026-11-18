@@ -1107,3 +1107,431 @@ class LiveBroadcastCatalog {
     ),
   ];
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  1. NetworkEmblem — Zero-External-Image Programmatic Broadcast Emblem
+// ─────────────────────────────────────────────────────────────────────────────
+
+class NetworkEmblem extends StatelessWidget {
+  final LiveChannel channel;
+  final double size;
+  final double borderRadius;
+
+  const NetworkEmblem({
+    super.key,
+    required this.channel,
+    this.size = 48,
+    this.borderRadius = 12,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: channel.brandPrimary.withValues(alpha: 0.28),
+            blurRadius: size * 0.24,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+        child: _buildStyledBody(),
+      ),
+    );
+  }
+
+  Widget _buildStyledBody() {
+    switch (channel.emblemStyle) {
+      case EmblemStyle.yellowPortal:
+        return Container(
+          decoration: BoxDecoration(
+            color: channel.brandSecondary,
+            border: Border.all(
+              color: channel.brandAccent.withValues(alpha: 0.85),
+              width: size >= 44 ? 2.2 : 1.5,
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+          ),
+          padding: EdgeInsets.all(size * 0.10),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: size * 0.18,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: channel.brandAccent,
+                    width: size >= 44 ? 2.0 : 1.3,
+                  ),
+                ),
+              ),
+              SizedBox(width: size * 0.07),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        channel.emblemTop,
+                        style: GoogleFonts.outfit(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 11,
+                          height: 1.05,
+                        ),
+                      ),
+                      Text(
+                        channel.emblemBottom,
+                        style: GoogleFonts.outfit(
+                          color: channel.brandAccent,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 8.5,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case EmblemStyle.ribbonSplit:
+        return Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            Column(
+              children: <Widget>[
+                Expanded(
+                  flex: 54,
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: <Color>[
+                          channel.brandPrimary,
+                          channel.brandPrimary.withValues(alpha: 0.82),
+                        ],
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        channel.emblemTop,
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  height: 1,
+                  color: Colors.white.withValues(alpha: 0.35),
+                ),
+                Expanded(
+                  flex: 46,
+                  child: Container(
+                    width: double.infinity,
+                    color: channel.brandSecondary,
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        channel.emblemBottom,
+                        style: GoogleFonts.inter(
+                          color: Colors.white.withValues(alpha: 0.95),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 8.5,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: AppGradients.glassGradient,
+                  borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.16),
+                    width: 0.8,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+
+      case EmblemStyle.saudiCrest:
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[channel.brandPrimary, channel.brandSecondary],
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+            border: Border.all(
+              color: channel.brandAccent.withValues(alpha: 0.55),
+              width: 1.0,
+            ),
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              PositionedDirectional(
+                top: 0,
+                start: 0,
+                end: 0,
+                child: Container(
+                  height: size * 0.08,
+                  color: channel.brandAccent,
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(size * 0.12),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        channel.emblemTop,
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                          letterSpacing: 1.0,
+                          height: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: channel.brandAccent,
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(4)),
+                        ),
+                        child: Text(
+                          channel.emblemBottom,
+                          style: GoogleFonts.inter(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 7.5,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case EmblemStyle.newsTicker:
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: <Color>[channel.brandSecondary, const Color(0xFF0A0F1D)],
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+            border: Border.all(
+              color: channel.brandPrimary.withValues(alpha: 0.65),
+              width: 1.0,
+            ),
+          ),
+          child: Column(
+            children: <Widget>[
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        channel.emblemTop,
+                        style: AppTextStyles.arabic(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: channel.brandPrimary,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+                color: channel.brandPrimary,
+                alignment: Alignment.center,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    channel.emblemBottom,
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 7.5,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case EmblemStyle.royalGold:
+      case EmblemStyle.cinemaGlow:
+        final bool isGold = channel.emblemStyle == EmblemStyle.royalGold;
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[channel.brandPrimary, channel.brandSecondary],
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+            border: Border.all(
+              color: (isGold ? channel.brandAccent : Colors.white)
+                  .withValues(alpha: isGold ? 0.45 : 0.20),
+              width: 1.0,
+            ),
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              PositionedDirectional(
+                end: -size * 0.22,
+                top: -size * 0.22,
+                child: Container(
+                  width: size * 0.65,
+                  height: size * 0.65,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: channel.brandAccent.withValues(alpha: 0.18),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(size * 0.11),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        channel.emblemTop,
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13.5,
+                          letterSpacing: 0.5,
+                          height: 1.05,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        channel.emblemBottom,
+                        style: GoogleFonts.inter(
+                          color: isGold
+                              ? channel.brandAccent
+                              : Colors.white.withValues(alpha: 0.88),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 8.0,
+                          letterSpacing: 0.7,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+    }
+  }
+}
+
+class EqualizerBars extends StatelessWidget {
+  final Animation<double> animation;
+  final bool isActive;
+  final Color color;
+  final double height;
+  final double barWidth;
+
+  const EqualizerBars({
+    super.key,
+    required this.animation,
+    required this.isActive,
+    this.color = AppColors.accentCyan,
+    this.height = 14,
+    this.barWidth = 2.6,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (BuildContext context, _) {
+        final double t = animation.value * 2 * math.pi;
+        const List<double> phases = <double>[0.0, 1.3, 2.5, 3.8];
+        const List<double> speeds = <double>[1.0, 2.0, 1.5, 2.5];
+
+        return SizedBox(
+          height: height,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: List<Widget>.generate(4, (int i) {
+              final double factor = isActive
+                  ? (0.28 +
+                      0.72 *
+                          ((math.sin(t * speeds[i] + phases[i]) + 1.0) * 0.5))
+                  : 0.22;
+              return Container(
+                width: barWidth,
+                height: (height * factor).clamp(3.0, height),
+                margin: EdgeInsetsDirectional.only(end: i < 3 ? 2.0 : 0.0),
+                decoration: BoxDecoration(
+                  color: isActive ? color : color.withValues(alpha: 0.40),
+                  borderRadius: const BorderRadius.all(Radius.circular(2)),
+                ),
+              );
+            }),
+          ),
+        );
+      },
+    );
+  }
+}
