@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter, PointerDeviceKind;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,8 +13,9 @@ import '../theme/app_theme.dart';
 import '../widgets/live_broadcast_widgets.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  LiveTvScreen v4.0 — Quiet Luxury Edition (Apple TV+ & B&O Restraint)
-//  Responsive Split-View (>= 960px) & Sticky Cinema Stage (< 960px)
+//  LiveTvScreen v5.0 — Crimson Cinema & Full-Bleed Minimalist Edition
+//  (SlothUI Design 4 Glowing 16:9 Showcase + HBO Design 5 Open Full-Bleed)
+//  Zero sidebars • Zero cluttered detail boxes • 100% Edge-to-Edge Canvas
 // ─────────────────────────────────────────────────────────────────────────────
 
 class LiveTvScreen extends StatefulWidget {
@@ -31,9 +33,11 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   LiveChannel _activeChannel = LiveBroadcastCatalog.channels.first;
   LiveCategory _selectedCategory = LiveCategory.all;
   String _searchQuery = '';
-  int _mobileTabIndex = 0;
   String _selectedQuality = 'Auto';
   bool _fillScreen = true;
+  bool _isMobileSearchOpen = false;
+  bool _isSearchFocused = false;
+  bool _isInFullscreen = false;
 
   final Set<String> _favoriteIds = <String>{
     'bein_1_premium',
@@ -42,7 +46,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   };
   final Set<String> _remindedSlotIds = <String>{};
 
-  // Video & Browser-Safe Autoplay State
+  // Video & Browser-Guaranteed Autoplay State
   VideoPlayerController? _videoController;
   int _loadGeneration = 0;
   bool _isVideoInitialized = false;
@@ -53,7 +57,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   bool _userUnmutedSession = false;
   double _volume = 1.0;
 
-  // HUD, OSD & Live Clock State
+  // Fullscreen HUD, OSD & Live Telemetry State
   bool _showHud = true;
   bool _showOsdBanner = false;
   DateTime _now = DateTime.now();
@@ -63,6 +67,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   late final AnimationController _pulseAnimCtrl;
   late final AnimationController _eqAnimCtrl;
   late final TextEditingController _searchCtrl;
+  late final FocusNode _searchFocusNode;
+  late final ScrollController _railScrollCtrl;
   late final ValueNotifier<int> _playerSyncTick;
 
   Timer? _clockTimer;
@@ -79,13 +85,21 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     )..repeat();
     _pulseAnimCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1600),
+      duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
     _eqAnimCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 950),
     )..repeat();
     _searchCtrl = TextEditingController();
+    _searchFocusNode = FocusNode()
+      ..addListener(() {
+        if (!mounted) {
+          return;
+        }
+        setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
+      });
+    _railScrollCtrl = ScrollController();
 
     _restoreFavorites();
     _loadChannel(_activeChannel, showOsd: false);
@@ -140,7 +154,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setStringList(_prefsFavoritesKey, _favoriteIds.toList());
     } catch (_) {
-      // Ignore storage write issues in restricted web incognito sessions.
+      // Ignore storage write issues in restricted web sessions.
     }
   }
 
@@ -168,7 +182,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             borderRadius: BorderRadius.all(Radius.circular(12)),
             side: BorderSide(
               color: LiveLuxuryPalette.hairlineMedium,
-              width: 0.6,
+              width: 0.7,
             ),
           ),
           content: Text(
@@ -241,6 +255,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         }
       });
       _notifyPlayerSync();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollActiveChannelIntoView();
+      });
     }
 
     if (showOsd) {
@@ -446,6 +463,71 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     _loadChannel(all[nextIdx]);
   }
 
+  void _selectCategory(LiveCategory category) {
+    unawaited(HapticFeedback.selectionClick());
+    if (_selectedCategory == category) {
+      return;
+    }
+    setState(() => _selectedCategory = category);
+    final List<LiveChannel> nextList = _filteredChannels;
+    if (nextList.isNotEmpty &&
+        !nextList.any((LiveChannel c) => c.id == _activeChannel.id)) {
+      _loadChannel(nextList.first, showOsd: false);
+    } else if (_railScrollCtrl.hasClients) {
+      _railScrollCtrl.animateTo(
+        0,
+        duration: AppDurations.medium,
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  void _scrollRailByCards(int direction, {required double stepExtent}) {
+    if (!_railScrollCtrl.hasClients) {
+      return;
+    }
+    unawaited(HapticFeedback.selectionClick());
+    final double maxExtent = _railScrollCtrl.position.maxScrollExtent;
+    final double target =
+        (_railScrollCtrl.offset + (direction * stepExtent)).clamp(0.0, maxExtent);
+    _railScrollCtrl.animateTo(
+      target,
+      duration: const Duration(milliseconds: 340),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _scrollActiveChannelIntoView() {
+    if (!mounted || !_railScrollCtrl.hasClients) {
+      return;
+    }
+    final List<LiveChannel> list = _filteredChannels;
+    final int idx = list.indexWhere((LiveChannel c) => c.id == _activeChannel.id);
+    if (idx < 0) {
+      return;
+    }
+    final double viewport = _railScrollCtrl.position.viewportDimension;
+    final double maxExtent = _railScrollCtrl.position.maxScrollExtent;
+    if (maxExtent <= 0 || viewport <= 0) {
+      return;
+    }
+    final bool isWide = MediaQuery.sizeOf(context).width >= 820;
+    final double itemSpan = isWide ? (236.0 + 14.0) : (192.0 + 12.0);
+    final double itemStart = idx * itemSpan;
+    final double itemEnd = itemStart + itemSpan;
+    final double currentOffset = _railScrollCtrl.offset;
+    if (itemStart >= currentOffset && itemEnd <= currentOffset + viewport) {
+      return;
+    }
+    final double centeredTarget =
+        (itemStart - (viewport - itemSpan) * 0.35).clamp(0.0, maxExtent);
+    _railScrollCtrl.animateTo(
+      centeredTarget,
+      duration: AppDurations.medium,
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   List<LiveChannel> get _filteredChannels {
     final String q = _searchQuery.trim().toLowerCase();
     return LiveBroadcastCatalog.channels.where((LiveChannel ch) {
@@ -485,21 +567,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     return '${val.toStringAsFixed(1)}K';
   }
 
-  @override
-  void dispose() {
-    _loadGeneration++;
-    _clockTimer?.cancel();
-    _hudHideTimer?.cancel();
-    _osdTimer?.cancel();
-    _studioAnimCtrl.dispose();
-    _pulseAnimCtrl.dispose();
-    _eqAnimCtrl.dispose();
-    _searchCtrl.dispose();
-    _playerSyncTick.dispose();
-    _videoController?.dispose();
-    super.dispose();
-  }
-
   void _openQualitySheet(BuildContext sheetHostContext) {
     showModalBottomSheet<void>(
       context: sheetHostContext,
@@ -516,9 +583,36 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     );
   }
 
-  void _openFullscreenPlayer() {
+  void _openScheduleSheet(BuildContext hostContext, {required bool fromFullscreen}) {
+    unawaited(HapticFeedback.selectionClick());
+    CinemaScheduleSheet.show(
+      hostContext,
+      channel: _activeChannel,
+      now: _now,
+      remindedSlotIds: _remindedSlotIds,
+      onToggleReminder: _toggleSlotReminder,
+      onWatchLive: fromFullscreen
+          ? null
+          : () => _openFullscreenPlayer(autoUnmute: true),
+    );
+  }
+
+  Future<void> _openFullscreenPlayer({bool autoUnmute = true}) async {
+    if (_isInFullscreen) {
+      return;
+    }
     unawaited(HapticFeedback.lightImpact());
-    Navigator.of(context).push(
+    if (autoUnmute && _isMuted) {
+      unawaited(_unmuteFromPill());
+    }
+    setState(() {
+      _isInFullscreen = true;
+      _showHud = true;
+    });
+    _scheduleHudAutoHide();
+    _notifyPlayerSync();
+
+    await Navigator.of(context).push<void>(
       PageRouteBuilder<void>(
         opaque: true,
         transitionDuration: AppDurations.medium,
@@ -528,17 +622,41 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             opacity: anim,
             child: _FullscreenBroadcastPage(
               syncListenable: _playerSyncTick,
-              stageBuilder: (BuildContext fullscreenCtx) => _buildPlayerStage(
-                fullscreenCtx,
-                isFullscreen: true,
-                borderRadius: 0,
-              ),
+              stageBuilder: (BuildContext fullscreenCtx) =>
+                  _buildFullscreenStage(fullscreenCtx),
             ),
           );
         },
       ),
     );
+
+    if (!mounted) {
+      return;
+    }
+    setState(() => _isInFullscreen = false);
+    _notifyPlayerSync();
   }
+
+  @override
+  void dispose() {
+    _loadGeneration++;
+    _clockTimer?.cancel();
+    _hudHideTimer?.cancel();
+    _osdTimer?.cancel();
+    _studioAnimCtrl.dispose();
+    _pulseAnimCtrl.dispose();
+    _eqAnimCtrl.dispose();
+    _searchCtrl.dispose();
+    _searchFocusNode.dispose();
+    _railScrollCtrl.dispose();
+    _playerSyncTick.dispose();
+    _videoController?.dispose();
+    super.dispose();
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  //  Main Build — Full-Bleed Open Cinema Canvas (Design 4 + Design 5)
+  // ───────────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -548,435 +666,903 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
     return Scaffold(
       backgroundColor: LiveLuxuryPalette.obsidianCanvas,
-      body: SafeArea(
-        bottom: canPop,
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final bool isWide = constraints.maxWidth >= 960;
-            return Column(
-              children: <Widget>[
-                _buildTopHeader(
-                  context,
-                  l10n: l10n,
-                  canPop: canPop,
-                  isWide: isWide,
-                ),
-                Expanded(
-                  child: isWide
-                      ? _buildWideSplitLayout(
+      resizeToAvoidBottomInset: false,
+      body: SizedBox.expand(
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            // ── Layer 0: Full-Bleed Live Video & Cinema Backdrop (100% W×H) ──
+            _buildFullBleedBackdropAndVideo(),
+
+            // ── Layer 1: Dual Cinematic Vignette (Design 4 + Design 5) ───────
+            _buildDualCinematicVignette(),
+
+            // ── Layer 2: Open Cinema Foreground (Top Bar + Hero + 16:9 Rail) ─
+            SafeArea(
+              bottom: canPop,
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  final double width = constraints.maxWidth;
+                  final double height = constraints.maxHeight;
+                  final bool isWide = width >= 820;
+                  final bool isCompactHeight = height < 630;
+                  final bool isUltraShort = height < 480;
+                  final double hPad = isWide ? 38.0 : 18.0;
+
+                  final Widget foregroundColumn = Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      SizedBox(
+                        height: isUltraShort ? 6 : (isCompactHeight ? 10 : 16),
+                      ),
+                      Padding(
+                        padding:
+                            EdgeInsetsDirectional.symmetric(horizontal: hPad),
+                        child: _buildTopMinimalistBar(
                           context,
                           l10n: l10n,
                           canPop: canPop,
-                          constraints: constraints,
-                        )
-                      : _buildCompactMobileLayout(
-                          context,
-                          l10n: l10n,
-                          canPop: canPop,
-                          constraints: constraints,
+                          width: width,
+                          isWide: isWide,
                         ),
-                ),
-              ],
-            );
-          },
+                      ),
+                      Expanded(
+                        child: Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: SingleChildScrollView(
+                            physics: const ClampingScrollPhysics(),
+                            padding: EdgeInsetsDirectional.fromSTEB(
+                              hPad,
+                              isUltraShort ? 6 : 12,
+                              hPad,
+                              isUltraShort ? 6 : 12,
+                            ),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 560),
+                              child: _buildHeroSpotlight(
+                                context,
+                                l10n: l10n,
+                                width: width,
+                                isWide: isWide,
+                                isCompactHeight: isCompactHeight,
+                                isUltraShort: isUltraShort,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      _buildBottomShowcaseRail(
+                        context,
+                        l10n: l10n,
+                        hPad: hPad,
+                        isWide: isWide,
+                        isUltraShort: isUltraShort,
+                      ),
+                      SizedBox(
+                        height: isUltraShort ? 6 : (isCompactHeight ? 10 : 14),
+                      ),
+                    ],
+                  );
+
+                  // Safety guard for extreme vertically shrunk windows (< 340px)
+                  if (height < 340) {
+                    return SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      child: SizedBox(
+                        height: 460,
+                        child: foregroundColumn,
+                      ),
+                    );
+                  }
+                  return foregroundColumn;
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ── Quiet Luxury Editorial Top Header (Zero Marketing Clutter) ────────────
-  Widget _buildTopHeader(
+  // ── Layer 0: 100% Edge-to-Edge Backdrop Photography + Smooth 600ms Video ──
+  Widget _buildFullBleedBackdropAndVideo() {
+    final VideoPlayerController? ctrl = _videoController;
+    final bool hasValidSize =
+        ctrl != null && _isVideoInitialized && !ctrl.value.size.isEmpty;
+    final double videoW = hasValidSize ? ctrl.value.size.width : 1600.0;
+    final double videoH = hasValidSize ? ctrl.value.size.height : 900.0;
+    final bool showLiveVideo = !_isInFullscreen &&
+        ctrl != null &&
+        _isVideoInitialized &&
+        !_hasStreamError;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        // Ambient Studio Canvas Fallback Underneath
+        AnimatedStudioCanvas(
+          channel: _activeChannel,
+          animation: _studioAnimCtrl,
+          isLoading: false,
+          hasError: false,
+          onRetry: () => _loadChannel(_activeChannel, showOsd: false),
+        ),
+
+        // Cross-Fading High-Res Cinema Backdrop Image
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 520),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+            return Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                ...previousChildren,
+                if (currentChild != null) currentChild,
+              ],
+            );
+          },
+          child: SizedBox.expand(
+            key: ValueKey<String>(_activeChannel.backdropUrl),
+            child: CachedNetworkImage(
+              imageUrl: _activeChannel.backdropUrl,
+              fit: BoxFit.cover,
+              fadeInDuration: const Duration(milliseconds: 280),
+              placeholder: (BuildContext context, String _) =>
+                  CinemaBackdropFallback(channel: _activeChannel),
+              errorWidget: (BuildContext context, String _, Object __) =>
+                  CinemaBackdropFallback(channel: _activeChannel),
+            ),
+          ),
+        ),
+
+        // Full-Bleed Live Video Surface (600ms Smooth Fade-In)
+        AnimatedOpacity(
+          opacity: showLiveVideo ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeOutCubic,
+          child: showLiveVideo
+              ? SizedBox.expand(
+                  child: FittedBox(
+                    fit: BoxFit.cover,
+                    clipBehavior: Clip.hardEdge,
+                    child: SizedBox(
+                      width: videoW,
+                      height: videoH,
+                      child: VideoPlayer(ctrl),
+                    ),
+                  ),
+                )
+              : const SizedBox.expand(),
+        ),
+      ],
+    );
+  }
+
+  // ── Layer 1: Dual Cinematic Vignette (Directional Horizontal + Vertical) ──
+  Widget _buildDualCinematicVignette() {
+    return const IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          // 1. Directional Horizontal Vignette: deep dark behind Hero text on Start
+          //    side, crystal-clear open video/photography on End side!
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: AlignmentDirectional.centerStart,
+                end: AlignmentDirectional.centerEnd,
+                stops: <double>[0.0, 0.35, 0.65, 1.0],
+                colors: <Color>[
+                  Color(0xF2050507),
+                  Color(0xCC050507),
+                  Color(0x47050507),
+                  Color(0x12050507),
+                ],
+              ),
+            ),
+          ),
+
+          // 2. Vertical Vignette: soft top bar protection + velvet #050505 floor
+          //    merging seamlessly into the bottom showcase rail & nav bar!
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: <double>[0.0, 0.25, 0.64, 0.85, 1.0],
+                colors: <Color>[
+                  Color(0x99050507),
+                  Color(0x00000000),
+                  Color(0x8C050507),
+                  Color(0xEB050507),
+                  Color(0xFF050505),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Layer 2A: Top Minimalist Bar (Design 4 Underline Tabs + Glass Capsule) ─
+  Widget _buildTopMinimalistBar(
     BuildContext context, {
     required AppLocalizations? l10n,
     required bool canPop,
+    required double width,
     required bool isWide,
   }) {
     final bool ar = LiveBroadcastType.isAr(context);
-    final bool favActive = _selectedCategory == LiveCategory.favorites;
+    final bool isFav = _favoriteIds.contains(_activeChannel.id);
+    final bool showExpandedMobileSearch = !isWide && _isMobileSearchOpen;
 
-    return Container(
-      height: isWide ? 56 : 50,
-      padding: EdgeInsetsDirectional.symmetric(
-        horizontal: isWide ? 26 : 16,
-        vertical: 6,
-      ),
+    return SizedBox(
+      height: isWide ? 42 : 38,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           if (canPop) ...<Widget>[
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => Navigator.of(context).maybePop(),
-                borderRadius: const BorderRadius.all(Radius.circular(11)),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: LiveLuxuryPalette.salonTile,
-                    borderRadius: const BorderRadius.all(Radius.circular(11)),
-                    border: Border.all(
-                      color: LiveLuxuryPalette.hairlineSubtle,
-                      width: 0.6,
-                    ),
-                  ),
-                  child: Icon(
-                    ar
-                        ? Icons.arrow_forward_ios_rounded
-                        : Icons.arrow_back_ios_new_rounded,
-                    size: 15,
-                    color: LiveLuxuryPalette.textPrimary,
-                  ),
-                ),
-              ),
+            _GlassCircleIconBtn(
+              icon: ar
+                  ? Icons.arrow_forward_ios_rounded
+                  : Icons.arrow_back_ios_new_rounded,
+              size: isWide ? 36 : 34,
+              iconSize: 14.5,
+              onTap: () => Navigator.of(context).maybePop(),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
           ],
 
-          // Calm Ruby Broadcast Indicator Dot
-          AnimatedBuilder(
-            animation: _pulseAnimCtrl,
-            builder: (BuildContext context, _) {
-              return Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: LiveLuxuryPalette.rubyLive.withValues(
-                    alpha: 0.68 + 0.32 * _pulseAnimCtrl.value,
-                  ),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: LiveLuxuryPalette.rubyLive.withValues(alpha: 0.42),
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 10),
-
-          // Editorial Title
-          Flexible(
-            child: Text(
-              l10n?.liveTvTitle ?? (ar ? 'البث المباشر' : 'Live TV'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LiveBroadcastType.style(
+          if (showExpandedMobileSearch) ...<Widget>[
+            Expanded(
+              child: _buildGlassSearchCapsule(
                 context,
-                size: isWide ? 20 : 18,
-                weight: FontWeight.w800,
-                color: LiveLuxuryPalette.textPrimary,
-                letterSpacing: ar ? 0.0 : -0.3,
-                display: true,
+                ar: ar,
+                autofocus: true,
+                onCloseMobileSearch: () {
+                  _searchCtrl.clear();
+                  _searchFocusNode.unfocus();
+                  setState(() {
+                    _searchQuery = '';
+                    _isMobileSearchOpen = false;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+          ] else ...<Widget>[
+            // Sleek Compact Cinema Brand Emblem
+            _buildCompactBrandLogo(context, showWordmark: width >= 620),
+            SizedBox(width: isWide ? 24 : 12),
+
+            // Clean Minimalist Category Text Tabs (Zero Boxes, 2px Underline)
+            Expanded(
+              child: ShaderMask(
+                shaderCallback: (Rect bounds) {
+                  return LinearGradient(
+                    begin: ar ? Alignment.centerRight : Alignment.centerLeft,
+                    end: ar ? Alignment.centerLeft : Alignment.centerRight,
+                    stops: const <double>[0.0, 0.02, 0.92, 1.0],
+                    colors: const <Color>[
+                      Colors.transparent,
+                      Colors.white,
+                      Colors.white,
+                      Colors.transparent,
+                    ],
+                  ).createShader(bounds);
+                },
+                blendMode: BlendMode.dstIn,
+                child: ScrollConfiguration(
+                  behavior: ScrollConfiguration.of(context).copyWith(
+                    dragDevices: const <PointerDeviceKind>{
+                      PointerDeviceKind.touch,
+                      PointerDeviceKind.mouse,
+                      PointerDeviceKind.trackpad,
+                    },
+                  ),
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsetsDirectional.only(end: 14),
+                    itemCount: LiveCategory.values.length,
+                    separatorBuilder: (_, __) =>
+                        SizedBox(width: isWide ? 22 : 15),
+                    itemBuilder: (BuildContext context, int index) {
+                      final LiveCategory cat = LiveCategory.values[index];
+                      final bool selected = _selectedCategory == cat;
+                      return _MinimalCategoryTab(
+                        label: cat.label(context, l10n),
+                        isSelected: selected,
+                        isWide: isWide,
+                        onTap: () => _selectCategory(cat),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+
+            // End-Side Controls: Capsule Search (210px on Wide, Icon Trigger on Mobile)
+            if (isWide) ...<Widget>[
+              SizedBox(
+                width: 210,
+                height: 36,
+                child: _buildGlassSearchCapsule(context, ar: ar),
+              ),
+              const SizedBox(width: 10),
+            ] else ...<Widget>[
+              Stack(
+                clipBehavior: Clip.none,
+                children: <Widget>[
+                  _GlassCircleIconBtn(
+                    icon: Icons.search_rounded,
+                    size: 34,
+                    iconSize: 16.5,
+                    isActive: _searchQuery.isNotEmpty,
+                    onTap: () {
+                      unawaited(HapticFeedback.selectionClick());
+                      setState(() => _isMobileSearchOpen = true);
+                    },
+                  ),
+                  if (_searchQuery.isNotEmpty)
+                    PositionedDirectional(
+                      top: 1,
+                      end: 1,
+                      child: Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: LiveLuxuryPalette.crimsonActiveRim,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 8),
+            ],
+          ],
+
+          // Background Live Audio Mute / Unmute Glass Circle Button
+          _GlassCircleIconBtn(
+            icon: _isMuted
+                ? Icons.volume_off_rounded
+                : Icons.volume_up_rounded,
+            size: isWide ? 36 : 34,
+            iconSize: 17,
+            isActive: !_isMuted,
+            onTap: _toggleMute,
+          ),
+          SizedBox(width: isWide ? 9 : 7),
+
+          // Active Channel Favorite Heart Glass Circle Button
+          _GlassCircleIconBtn(
+            icon: isFav
+                ? Icons.favorite_rounded
+                : Icons.favorite_border_rounded,
+            size: isWide ? 36 : 34,
+            iconSize: 16.5,
+            iconColor:
+                isFav ? LiveLuxuryPalette.crimsonActiveRim : Colors.white,
+            isActive: isFav,
+            activeBorderColor:
+                LiveLuxuryPalette.crimsonActiveRim.withValues(alpha: 0.48),
+            onTap: () => _toggleFavorite(_activeChannel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactBrandLogo(
+    BuildContext context, {
+    required bool showWordmark,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Container(
+          width: 30,
+          height: 30,
+          decoration: const BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(9)),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[
+                LiveLuxuryPalette.crimsonCtaStart,
+                LiveLuxuryPalette.crimsonCtaEnd,
+              ],
+            ),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Color(0x59E50914),
+                blurRadius: 12,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.play_arrow_rounded,
+            color: Colors.white,
+            size: 19,
+          ),
+        ),
+        if (showWordmark) ...<Widget>[
+          const SizedBox(width: 9),
+          Text(
+            'SKYLIVE',
+            style: LiveBroadcastType.style(
+              context,
+              size: 14.5,
+              weight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: 1.1,
+              display: true,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildGlassSearchCapsule(
+    BuildContext context, {
+    required bool ar,
+    bool autofocus = false,
+    VoidCallback? onCloseMobileSearch,
+  }) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(24)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: AnimatedContainer(
+          duration: AppDurations.fast,
+          height: 36,
+          decoration: BoxDecoration(
+            color:
+                Colors.white.withValues(alpha: _isSearchFocused ? 0.11 : 0.07),
+            borderRadius: const BorderRadius.all(Radius.circular(24)),
+            border: Border.all(
+              color: Colors.white
+                  .withValues(alpha: _isSearchFocused ? 0.30 : 0.16),
+              width: 1.0,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: TextField(
+            controller: _searchCtrl,
+            focusNode: _searchFocusNode,
+            autofocus: autofocus,
+            onChanged: (String value) => setState(() => _searchQuery = value),
+            style: LiveBroadcastType.style(
+              context,
+              size: 12.5,
+              weight: FontWeight.w500,
+              color: Colors.white,
+            ),
+            cursorColor: Colors.white,
+            decoration: InputDecoration(
+              isDense: true,
+              filled: false,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              hintText: ar ? 'ابحث عن قناة أو عرض...' : 'Search live TV...',
+              hintStyle: LiveBroadcastType.style(
+                context,
+                size: 12,
+                weight: FontWeight.w400,
+                color: Colors.white.withValues(alpha: 0.56),
+              ),
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                size: 16,
+                color: Colors.white.withValues(alpha: 0.70),
+              ),
+              prefixIconConstraints: const BoxConstraints(
+                minWidth: 34,
+                minHeight: 34,
+              ),
+              suffixIcon:
+                  (_searchQuery.isNotEmpty || onCloseMobileSearch != null)
+                      ? GestureDetector(
+                          onTap: () {
+                            if (onCloseMobileSearch != null &&
+                                _searchQuery.isEmpty) {
+                              onCloseMobileSearch();
+                            } else {
+                              _searchCtrl.clear();
+                              setState(() => _searchQuery = '');
+                              if (onCloseMobileSearch != null) {
+                                onCloseMobileSearch();
+                              }
+                            }
+                          },
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 15,
+                            color: Colors.white.withValues(alpha: 0.72),
+                          ),
+                        )
+                      : null,
+              suffixIconConstraints: const BoxConstraints(
+                minWidth: 32,
+                minHeight: 34,
               ),
             ),
           ),
-          const Spacer(),
+        ),
+      ),
+    );
+  }
 
-          // Unboxed Platinum Digital Clock
+  // ── Layer 2B: Open Floating Hero Spotlight (Zero Background Box!) ──────────
+  Widget _buildHeroSpotlight(
+    BuildContext context, {
+    required AppLocalizations? l10n,
+    required double width,
+    required bool isWide,
+    required bool isCompactHeight,
+    required bool isUltraShort,
+  }) {
+    final bool ar = LiveBroadcastType.isAr(context);
+    final List<EpgSlot> slots = _activeChannel.buildSchedule(_now);
+    final EpgSlot currentSlot = slots.first;
+    final int remainingMins = currentSlot.remainingMinutesAt(_now);
+    final LiveMatchInfo? match = _activeChannel.liveMatch;
+    final String qualityLabel = _selectedQuality == 'Auto'
+        ? _activeChannel.qualityTag
+        : _selectedQuality;
+
+    final double titleFontSize = isWide
+        ? (isCompactHeight ? 36.0 : 42.0)
+        : (isUltraShort ? 24.0 : (isCompactHeight ? 26.5 : 29.5));
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 340),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+        return Stack(
+          alignment: AlignmentDirectional.centerStart,
+          children: <Widget>[
+            ...previousChildren,
+            if (currentChild != null) currentChild,
+          ],
+        );
+      },
+      transitionBuilder: (Widget child, Animation<double> anim) {
+        final Animation<Offset> slide = Tween<Offset>(
+          begin: const Offset(0.0, 0.05),
+          end: Offset.zero,
+        ).animate(anim);
+        return FadeTransition(
+          opacity: anim,
+          child: SlideTransition(position: slide, child: child),
+        );
+      },
+      child: Column(
+        key: ValueKey<String>('${_activeChannel.id}_${currentSlot.id}'),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          // 1. Precision Frosted-Glass Metadata Capsules Row (Design 4)
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              // Pulsing • LIVE Capsule
+              AnimatedBuilder(
+                animation: _pulseAnimCtrl,
+                builder: (BuildContext context, _) {
+                  return _HeroGlassPill(
+                    maxWidth: width - 48,
+                    borderColor: LiveLuxuryPalette.crimsonActiveRim
+                        .withValues(alpha: 0.42),
+                    backgroundColor:
+                        LiveLuxuryPalette.rubyLive.withValues(alpha: 0.18),
+                    leading: Container(
+                      width: 6.5,
+                      height: 6.5,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: LiveLuxuryPalette.crimsonActiveRim.withValues(
+                          alpha: 0.65 + 0.35 * _pulseAnimCtrl.value,
+                        ),
+                        boxShadow: <BoxShadow>[
+                          BoxShadow(
+                            color: LiveLuxuryPalette.crimsonActiveRim
+                                .withValues(alpha: 0.55),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                    ),
+                    label: ar ? 'مباشر' : 'LIVE',
+                  );
+                },
+              ),
+
+              // 4K HDR Quality Capsule (Interactive Picker)
+              _HeroGlassPill(
+                maxWidth: width - 48,
+                label: qualityLabel,
+                onTap: () => _openQualitySheet(context),
+              ),
+
+              // Live Match Score Capsule OR Category + Audio Capsule
+              if (match != null)
+                _HeroGlassPill(
+                  maxWidth: width - 48,
+                  leading: const Icon(
+                    Icons.sports_soccer_rounded,
+                    size: 12.5,
+                    color: LiveLuxuryPalette.warmNowStreaming,
+                  ),
+                  label: match.summaryPill(ar),
+                  tabular: true,
+                )
+              else ...<Widget>[
+                _HeroGlassPill(
+                  maxWidth: width - 48,
+                  label: _activeChannel.category.label(context, l10n),
+                ),
+                if (isWide)
+                  _HeroGlassPill(
+                    maxWidth: width - 48,
+                    label: _activeChannel.audioTag(ar),
+                  ),
+              ],
+            ],
+          ),
+
+          SizedBox(height: isUltraShort ? 8 : 13),
+
+          // 2. Bold Cinematic Hero Title (36–44px Web / 26–30px Mobile, w900)
           Text(
-            EpgSlot.formatClock(_now),
+            currentSlot.title(ar),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: LiveBroadcastType.style(
               context,
-              size: 13.5,
-              weight: FontWeight.w500,
-              color: LiveLuxuryPalette.silverSecondary,
-              letterSpacing: 0.4,
-              tabular: true,
+              size: titleFontSize,
+              weight: FontWeight.w900,
+              color: Colors.white,
+              height: ar ? 1.16 : 1.06,
+              letterSpacing: ar ? 0.0 : -0.9,
+              display: true,
+            ).copyWith(
+              shadows: const <Shadow>[
+                Shadow(
+                  color: Color(0xB3000000),
+                  blurRadius: 22,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 12),
 
-          // Refined Glass Favorites Filter Pill
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {
-                unawaited(HapticFeedback.selectionClick());
-                setState(() {
-                  _selectedCategory =
-                      favActive ? LiveCategory.all : LiveCategory.favorites;
-                  if (!isWide) {
-                    _mobileTabIndex = 0;
-                  }
-                });
-              },
-              borderRadius: const BorderRadius.all(Radius.circular(17)),
-              child: AnimatedContainer(
-                duration: AppDurations.normal,
-                height: 34,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: favActive
-                      ? LiveLuxuryPalette.rubyLive.withValues(alpha: 0.14)
-                      : LiveLuxuryPalette.salonTile,
-                  borderRadius: const BorderRadius.all(Radius.circular(17)),
-                  border: Border.all(
-                    color: favActive
-                        ? LiveLuxuryPalette.rubyLive.withValues(alpha: 0.36)
-                        : LiveLuxuryPalette.hairlineSubtle,
-                    width: favActive ? 0.75 : 0.6,
+          SizedBox(height: isUltraShort ? 6 : 10),
+
+          // 3. Warm HBO "Now Streaming" Status Line (#F5A623 + Channel + Time Left)
+          Text.rich(
+            TextSpan(
+              children: <InlineSpan>[
+                TextSpan(
+                  text: ar ? 'يبث الآن مباشر' : 'Now Streaming',
+                  style: LiveBroadcastType.style(
+                    context,
+                    size: isWide ? 13.5 : 12.5,
+                    weight: FontWeight.w700,
+                    color: LiveLuxuryPalette.warmNowStreaming,
                   ),
                 ),
+                TextSpan(
+                  text:
+                      '  •  ${_activeChannel.name(ar)}  •  ${ar ? 'المتبقي $remainingMins دقيقة' : '$remainingMins min left'}',
+                  style: LiveBroadcastType.style(
+                    context,
+                    size: isWide ? 13.5 : 12.5,
+                    weight: FontWeight.w500,
+                    color: Colors.white.withValues(alpha: 0.90),
+                    tabular: true,
+                  ),
+                ),
+              ],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+
+          SizedBox(height: isUltraShort ? 6 : 10),
+
+          // 4. Calm Silver Cinematic Synopsis (#B0B4C0, 14px, max 2 lines)
+          Text(
+            currentSlot.description(ar),
+            maxLines: isUltraShort ? 1 : 2,
+            overflow: TextOverflow.ellipsis,
+            style: LiveBroadcastType.style(
+              context,
+              size: isWide ? 14.0 : 13.2,
+              weight: FontWeight.w400,
+              color: LiveLuxuryPalette.cinemaSilver,
+              height: 1.48,
+            ).copyWith(
+              shadows: const <Shadow>[
+                Shadow(
+                  color: Color(0x99000000),
+                  blurRadius: 12,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: isUltraShort ? 12 : (isCompactHeight ? 16 : 22)),
+
+          // 5. Iconic SlothUI Design 4 Action Button Pair
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              // Primary Crimson Pill Button (#FF1E2D -> #D90712 + Soft Red Glow)
+              _PrimaryCrimsonCtaBtn(
+                label: ar ? 'شاهد البث الحي' : 'Watch Live Stream',
+                compact: isCompactHeight,
+                onTap: () => _openFullscreenPlayer(autoUnmute: true),
+              ),
+
+              // Secondary Frosted Glass Pill Button (white 8% + border white 20%)
+              _SecondaryGlassCtaBtn(
+                label: ar ? 'جدول البرامج' : 'Program Schedule',
+                compact: isCompactHeight,
+                onTap: () => _openScheduleSheet(context, fromFullscreen: false),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Layer 2C: Bottom 16:9 Glowing Showcase Rail (Design 4) ─────────────────
+  Widget _buildBottomShowcaseRail(
+    BuildContext context, {
+    required AppLocalizations? l10n,
+    required double hPad,
+    required bool isWide,
+    required bool isUltraShort,
+  }) {
+    final bool ar = LiveBroadcastType.isAr(context);
+    final List<LiveChannel> filtered = _filteredChannels;
+    final double cardWidth = isWide ? 236.0 : (isUltraShort ? 168.0 : 192.0);
+    final double cardHeight = isWide ? 134.0 : (isUltraShort ? 96.0 : 112.0);
+    final double gap = isWide ? 14.0 : 12.0;
+
+    final String railHeading = _selectedCategory == LiveCategory.all
+        ? (ar ? 'جميع القنوات المباشرة' : 'All Live Channels')
+        : (ar
+            ? 'جميع القنوات المباشرة  •  ${_selectedCategory.label(context, l10n)}'
+            : 'All Live Channels  •  ${_selectedCategory.label(context, l10n)}');
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        // Showcase Header Row: Title on Start + Thin Circular < > Arrows on End
+        Padding(
+          padding: EdgeInsetsDirectional.symmetric(horizontal: hPad),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Expanded(
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Icon(
-                      favActive
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      size: 15,
-                      color: favActive
-                          ? LiveLuxuryPalette.rubyLive
-                          : LiveLuxuryPalette.silverSecondary,
+                    Flexible(
+                      child: Text(
+                        railHeading,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LiveBroadcastType.style(
+                          context,
+                          size: isWide ? 15.5 : 14.0,
+                          weight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: ar ? 0.0 : -0.2,
+                        ),
+                      ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Text(
-                      '${_favoriteIds.length}',
+                      '(${filtered.length})',
                       style: LiveBroadcastType.style(
                         context,
-                        size: 12,
-                        weight: favActive ? FontWeight.w700 : FontWeight.w600,
-                        color: favActive
-                            ? LiveLuxuryPalette.textPrimary
-                            : LiveLuxuryPalette.silverSecondary,
+                        size: 12.5,
+                        weight: FontWeight.w600,
+                        color: LiveLuxuryPalette.silverSecondary,
                         tabular: true,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Wide Web / Desktop Split-View Cockpit (width >= 960px, gap: 20px) ─────
-  Widget _buildWideSplitLayout(
-    BuildContext context, {
-    required AppLocalizations? l10n,
-    required bool canPop,
-    required BoxConstraints constraints,
-  }) {
-    final List<EpgSlot> slots = _activeChannel.buildSchedule(_now);
-    final EpgSlot currentSlot = slots.first;
-    final EpgSlot nextSlot = slots.length > 1 ? slots[1] : slots.first;
-    final double maxPlayerHeight =
-        (constraints.maxHeight * 0.54).clamp(260.0, 500.0);
-    final double stageWidth = (constraints.maxWidth - 72) * 0.62;
-    final double playerHeight =
-        math.min(stageWidth * 9.0 / 16.0, maxPlayerHeight);
-
-    return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(
-        26,
-        6,
-        26,
-        canPop ? 18 : 22,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          // Main Cinema Stage + Editorial Program & Match Details (62%)
-          Expanded(
-            flex: 62,
-            child: SingleChildScrollView(
-              padding: const EdgeInsetsDirectional.only(bottom: 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Container(
-                    height: playerHeight,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius:
-                          const BorderRadius.all(Radius.circular(18)),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.09),
-                        width: 0.6,
-                      ),
-                      boxShadow: const <BoxShadow>[
-                        BoxShadow(
-                          color: Color(0x99000000),
-                          blurRadius: 36,
-                          offset: Offset(0, 16),
-                        ),
-                        ...AppShadows.card,
-                      ],
-                    ),
-                    child: _buildPlayerStage(
-                      context,
-                      isFullscreen: false,
-                      borderRadius: 17.4,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ActiveProgramCard(
-                    channel: _activeChannel,
-                    currentSlot: currentSlot,
-                    nextSlot: nextSlot,
-                    now: _now,
-                    isFavorite: _favoriteIds.contains(_activeChannel.id),
-                    onToggleFavorite: () => _toggleFavorite(_activeChannel),
-                  ),
-                  if (_activeChannel.liveMatch != null) ...<Widget>[
-                    const SizedBox(height: 14),
-                    LiveMatchScorebugCard(
-                      match: _activeChannel.liveMatch!,
-                      pulseAnimation: _pulseAnimCtrl,
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  BroadcastScheduleStrip(
-                    channel: _activeChannel,
-                    slots: slots,
-                    now: _now,
-                    remindedSlotIds: _remindedSlotIds,
-                    onToggleReminder: _toggleSlotReminder,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 20),
-
-          // Smoked Obsidian Salon Guide Sidebar (38%)
-          Expanded(
-            flex: 38,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: LiveLuxuryPalette.smokedPanel,
-                  borderRadius: const BorderRadius.all(Radius.circular(18)),
-                  border: Border.all(
-                    color: LiveLuxuryPalette.hairlineSubtle,
-                    width: 0.6,
-                  ),
-                  boxShadow: AppShadows.card,
-                ),
-                child: _buildGuidePanel(
-                  context,
-                  l10n: l10n,
-                  isWide: true,
-                  bottomPad: 16,
+              const SizedBox(width: 12),
+              _RailArrowBtn(
+                icon: ar
+                    ? Icons.chevron_right_rounded
+                    : Icons.chevron_left_rounded,
+                onTap: () => _scrollRailByCards(
+                  -1,
+                  stepExtent: (cardWidth + gap) * 2,
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Mobile & Portrait Tablet Sticky Stage Layout (width < 960px) ──────────
-  Widget _buildCompactMobileLayout(
-    BuildContext context, {
-    required AppLocalizations? l10n,
-    required bool canPop,
-    required BoxConstraints constraints,
-  }) {
-    final List<EpgSlot> slots = _activeChannel.buildSchedule(_now);
-    final EpgSlot currentSlot = slots.first;
-    final EpgSlot nextSlot = slots.length > 1 ? slots[1] : slots.first;
-    final double stickyMaxHeight =
-        (constraints.maxHeight * 0.34).clamp(185.0, 290.0);
-
-    return Column(
-      children: <Widget>[
-        // Sticky Top Frameless OLED Player Stage
-        Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(14, 4, 14, 0),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: stickyMaxHeight),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: const BorderRadius.all(Radius.circular(18)),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.09),
-                    width: 0.6,
-                  ),
-                  boxShadow: const <BoxShadow>[
-                    BoxShadow(
-                      color: Color(0x85000000),
-                      blurRadius: 24,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: _buildPlayerStage(
-                  context,
-                  isFullscreen: false,
-                  borderRadius: 17.4,
+              const SizedBox(width: 8),
+              _RailArrowBtn(
+                icon: ar
+                    ? Icons.chevron_left_rounded
+                    : Icons.chevron_right_rounded,
+                onTap: () => _scrollRailByCards(
+                  1,
+                  stepExtent: (cardWidth + gap) * 2,
                 ),
               ),
-            ),
+            ],
           ),
         ),
 
-        // Live Match Quick Ribbon (Sports Channels)
-        if (_activeChannel.liveMatch != null)
-          CompactMatchRibbon(
-            match: _activeChannel.liveMatch!,
-            pulseAnimation: _pulseAnimCtrl,
-            onTap: () {
-              unawaited(HapticFeedback.selectionClick());
-              setState(() => _mobileTabIndex = 1);
-            },
-          ),
+        SizedBox(height: isUltraShort ? 6 : 8),
 
-        // Quiet Luxury Segmented Switcher
-        _buildMobileSegmentedTabs(context),
-
-        // Active Tab Body
-        Expanded(
-          child: _mobileTabIndex == 0
-              ? _buildGuidePanel(
-                  context,
-                  l10n: l10n,
-                  isWide: false,
-                  bottomPad: canPop ? 18 : 26,
+        // 16:9 Glowing Showcase Cards Rail (Mouse + Touch + Trackpad)
+        SizedBox(
+          height: cardHeight + 16,
+          child: filtered.isEmpty
+              ? Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(hPad, 6, hPad, 8),
+                  child: _buildEmptyRailState(context, ar: ar),
                 )
-              : SingleChildScrollView(
-                  padding: EdgeInsetsDirectional.fromSTEB(
-                    14,
-                    4,
-                    14,
-                    canPop ? 18 : 26,
+              : ScrollConfiguration(
+                  behavior: ScrollConfiguration.of(context).copyWith(
+                    dragDevices: const <PointerDeviceKind>{
+                      PointerDeviceKind.mouse,
+                      PointerDeviceKind.touch,
+                      PointerDeviceKind.trackpad,
+                    },
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      ActiveProgramCard(
-                        channel: _activeChannel,
-                        currentSlot: currentSlot,
-                        nextSlot: nextSlot,
+                  child: ListView.separated(
+                    controller: _railScrollCtrl,
+                    scrollDirection: Axis.horizontal,
+                    clipBehavior: Clip.none,
+                    padding: EdgeInsetsDirectional.fromSTEB(hPad, 6, hPad, 10),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => SizedBox(width: gap),
+                    itemBuilder: (BuildContext context, int index) {
+                      final LiveChannel channel = filtered[index];
+                      final bool isSelected = channel.id == _activeChannel.id;
+                      return CinemaChannelCard(
+                        channel: channel,
                         now: _now,
-                        isFavorite: _favoriteIds.contains(_activeChannel.id),
-                        onToggleFavorite: () => _toggleFavorite(_activeChannel),
-                      ),
-                      if (_activeChannel.liveMatch != null) ...<Widget>[
-                        const SizedBox(height: 14),
-                        LiveMatchScorebugCard(
-                          match: _activeChannel.liveMatch!,
-                          pulseAnimation: _pulseAnimCtrl,
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      BroadcastScheduleStrip(
-                        channel: _activeChannel,
-                        slots: slots,
-                        now: _now,
-                        remindedSlotIds: _remindedSlotIds,
-                        onToggleReminder: _toggleSlotReminder,
-                      ),
-                    ],
+                        isSelected: isSelected,
+                        width: cardWidth,
+                        height: cardHeight,
+                        isFavorite: _favoriteIds.contains(channel.id),
+                        onToggleFavorite: () => _toggleFavorite(channel),
+                        onTap: () {
+                          if (!isSelected) {
+                            unawaited(HapticFeedback.selectionClick());
+                            _loadChannel(channel);
+                          } else {
+                            _openFullscreenPlayer(autoUnmute: true);
+                          }
+                        },
+                      );
+                    },
                   ),
                 ),
         ),
@@ -984,183 +1570,75 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     );
   }
 
-  Widget _buildMobileSegmentedTabs(BuildContext context) {
-    final bool ar = LiveBroadcastType.isAr(context);
-    final int count = _filteredChannels.length;
-    final List<String> labels = <String>[
-      ar ? 'دليل القنوات ($count)' : 'Live Channels ($count)',
-      ar ? 'تفاصيل البث والجدول' : 'Program & Match Info',
-    ];
-
-    return Container(
-      height: 40,
-      margin: const EdgeInsetsDirectional.fromSTEB(14, 10, 14, 8),
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: LiveLuxuryPalette.smokedPanel,
-        borderRadius: const BorderRadius.all(Radius.circular(13)),
-        border: Border.all(
-          color: LiveLuxuryPalette.hairlineSubtle,
-          width: 0.6,
-        ),
-      ),
-      child: Row(
-        children: List<Widget>.generate(2, (int idx) {
-          final bool active = _mobileTabIndex == idx;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                unawaited(HapticFeedback.selectionClick());
-                setState(() => _mobileTabIndex = idx);
-              },
-              child: AnimatedContainer(
-                duration: AppDurations.normal,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: active ? const Color(0xFF1F1F27) : Colors.transparent,
-                  borderRadius: const BorderRadius.all(Radius.circular(10)),
-                  border: active
-                      ? Border.all(
-                          color: LiveLuxuryPalette.hairlineMedium,
-                          width: 0.6,
-                        )
-                      : null,
-                ),
+  Widget _buildEmptyRailState(BuildContext context, {required bool ar}) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(16)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: const BorderRadius.all(Radius.circular(16)),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.14),
+              width: 0.8,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const Icon(
+                Icons.tv_off_rounded,
+                size: 20,
+                color: LiveLuxuryPalette.cinemaSilver,
+              ),
+              const SizedBox(width: 10),
+              Flexible(
                 child: Text(
-                  labels[idx],
+                  ar
+                      ? 'لا توجد قنوات مطابقة للبحث أو الفئة المختارة'
+                      : 'No channels match your search or category',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: LiveBroadcastType.style(
                     context,
-                    size: 12,
-                    weight: active ? FontWeight.w700 : FontWeight.w500,
-                    color: active
-                        ? LiveLuxuryPalette.textPrimary
-                        : LiveLuxuryPalette.silverSecondary,
-                    tabular: true,
+                    size: 13,
+                    weight: FontWeight.w500,
+                    color: LiveLuxuryPalette.cinemaSilver,
                   ),
                 ),
               ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  // ── Interactive Salon Guide Panel (Velvet Search + ShaderMask Categories) ─
-  Widget _buildGuidePanel(
-    BuildContext context, {
-    required AppLocalizations? l10n,
-    required bool isWide,
-    required double bottomPad,
-  }) {
-    final bool ar = LiveBroadcastType.isAr(context);
-    final List<LiveChannel> filtered = _filteredChannels;
-    final bool audioActive = _isVideoInitialized && _isPlaying && !_isMuted;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(
-            16,
-            isWide ? 16 : 4,
-            16,
-            10,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              if (isWide) ...<Widget>[
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        l10n?.liveTvGuide ??
-                            (ar ? 'دليل القنوات المباشرة' : 'Live TV Guide'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LiveBroadcastType.style(
-                          context,
-                          size: 15.5,
-                          weight: FontWeight.w700,
-                          color: LiveLuxuryPalette.textPrimary,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      ar ? '${filtered.length} قناة' : '${filtered.length} CH',
-                      style: LiveBroadcastType.style(
-                        context,
-                        size: 12,
-                        weight: FontWeight.w500,
-                        color: LiveLuxuryPalette.silverMuted,
-                        tabular: true,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              // Velvet Hairline Search Input
-              SizedBox(
-                height: 42,
-                child: TextField(
-                  controller: _searchCtrl,
-                  onChanged: (String v) => setState(() => _searchQuery = v),
-                  style: LiveBroadcastType.style(
-                    context,
-                    size: 13,
-                    weight: FontWeight.w500,
-                    color: LiveLuxuryPalette.textPrimary,
+              const SizedBox(width: 14),
+              GestureDetector(
+                onTap: () {
+                  _searchCtrl.clear();
+                  setState(() {
+                    _searchQuery = '';
+                    _selectedCategory = LiveCategory.all;
+                    _isMobileSearchOpen = false;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
                   ),
-                  cursorColor: Colors.white70,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: LiveLuxuryPalette.salonTile,
-                    hintText: ar
-                        ? 'ابحث عن قناة، برنامج، أو مباراة...'
-                        : 'Search channel, show, or live match...',
-                    hintStyle: LiveBroadcastType.style(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: const BorderRadius.all(Radius.circular(20)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.22),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Text(
+                    ar ? 'عرض الكل' : 'Reset',
+                    style: LiveBroadcastType.style(
                       context,
-                      size: 12.5,
-                      weight: FontWeight.w400,
-                      color: LiveLuxuryPalette.silverMuted,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search_rounded,
-                      size: 18,
-                      color: LiveLuxuryPalette.silverMuted,
-                    ),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            onPressed: () {
-                              _searchCtrl.clear();
-                              setState(() => _searchQuery = '');
-                            },
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              size: 16,
-                              color: LiveLuxuryPalette.silverSecondary,
-                            ),
-                          )
-                        : null,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    enabledBorder: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(13)),
-                      borderSide: BorderSide(
-                        color: LiveLuxuryPalette.hairlineSubtle,
-                        width: 0.5,
-                      ),
-                    ),
-                    focusedBorder: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(13)),
-                      borderSide: BorderSide(
-                        color: LiveLuxuryPalette.hairlineMedium,
-                        width: 0.8,
-                      ),
+                      size: 12,
+                      weight: FontWeight.w700,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -1168,247 +1646,49 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             ],
           ),
         ),
-
-        // Seamless Edge-Faded Category Strip (Mouse + Touch Drag)
-        SizedBox(
-          height: 34,
-          child: ShaderMask(
-            shaderCallback: (Rect bounds) {
-              return LinearGradient(
-                begin: ar ? Alignment.centerRight : Alignment.centerLeft,
-                end: ar ? Alignment.centerLeft : Alignment.centerRight,
-                stops: const <double>[0.0, 0.025, 0.90, 1.0],
-                colors: const <Color>[
-                  Colors.transparent,
-                  Colors.white,
-                  Colors.white,
-                  Colors.transparent,
-                ],
-              ).createShader(bounds);
-            },
-            blendMode: BlendMode.dstIn,
-            child: ScrollConfiguration(
-              behavior: ScrollConfiguration.of(context).copyWith(
-                dragDevices: const <PointerDeviceKind>{
-                  PointerDeviceKind.touch,
-                  PointerDeviceKind.mouse,
-                  PointerDeviceKind.trackpad,
-                },
-              ),
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 24, 0),
-                itemCount: LiveCategory.values.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (BuildContext context, int index) {
-                  final LiveCategory cat = LiveCategory.values[index];
-                  final bool selected = _selectedCategory == cat;
-                  final Color iconColor = selected
-                      ? (cat == LiveCategory.favorites
-                          ? LiveLuxuryPalette.rubyLive
-                          : LiveLuxuryPalette.textPrimary)
-                      : LiveLuxuryPalette.silverMuted;
-
-                  return Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        unawaited(HapticFeedback.selectionClick());
-                        setState(() => _selectedCategory = cat);
-                      },
-                      borderRadius: const BorderRadius.all(Radius.circular(17)),
-                      child: AnimatedContainer(
-                        duration: AppDurations.normal,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? const Color(0xFF22222A)
-                              : LiveLuxuryPalette.salonTile,
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(17)),
-                          border: Border.all(
-                            color: selected
-                                ? Colors.white.withValues(alpha: 0.22)
-                                : LiveLuxuryPalette.hairlineSubtle,
-                            width: selected ? 0.7 : 0.5,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Icon(cat.icon, size: 13.5, color: iconColor),
-                            const SizedBox(width: 6),
-                            Text(
-                              cat.label(context, l10n),
-                              style: LiveBroadcastType.style(
-                                context,
-                                size: 11.5,
-                                weight: selected
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                                color: selected
-                                    ? LiveLuxuryPalette.textPrimary
-                                    : LiveLuxuryPalette.silverSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // Filtered Salon Channels List
-        Expanded(
-          child: filtered.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        const Icon(
-                          Icons.tv_off_rounded,
-                          size: 36,
-                          color: LiveLuxuryPalette.silverMuted,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          l10n?.liveNoChannelsInCategory ??
-                              (ar
-                                  ? 'لا توجد قنوات مطابقة للفلتر الحالي'
-                                  : 'No channels match your current filter'),
-                          textAlign: TextAlign.center,
-                          style: LiveBroadcastType.style(
-                            context,
-                            size: 13,
-                            weight: FontWeight.w500,
-                            color: LiveLuxuryPalette.silverSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              _searchCtrl.clear();
-                              setState(() {
-                                _searchQuery = '';
-                                _selectedCategory = LiveCategory.all;
-                              });
-                            },
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(18)),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: LiveLuxuryPalette.salonTileActive,
-                                borderRadius:
-                                    const BorderRadius.all(Radius.circular(18)),
-                                border: Border.all(
-                                  color: LiveLuxuryPalette.hairlineMedium,
-                                  width: 0.6,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  const Icon(
-                                    Icons.restart_alt_rounded,
-                                    size: 15,
-                                    color: LiveLuxuryPalette.textPrimary,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    ar
-                                        ? 'عرض جميع القنوات'
-                                        : 'Show All Channels',
-                                    style: LiveBroadcastType.style(
-                                      context,
-                                      size: 12,
-                                      weight: FontWeight.w600,
-                                      color: LiveLuxuryPalette.textPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : ListView.separated(
-                  padding: EdgeInsetsDirectional.fromSTEB(
-                    14,
-                    2,
-                    14,
-                    bottomPad,
-                  ),
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (BuildContext context, int index) {
-                    final LiveChannel channel = filtered[index];
-                    final bool isSelected = channel.id == _activeChannel.id;
-                    return EpgChannelTile(
-                      channel: channel,
-                      now: _now,
-                      isSelected: isSelected,
-                      isPlayingAudio: isSelected && audioActive,
-                      isFavorite: _favoriteIds.contains(channel.id),
-                      equalizerAnim: _eqAnimCtrl,
-                      onTap: () {
-                        if (!isSelected) {
-                          _loadChannel(channel);
-                        } else {
-                          _revealHudTemporarily();
-                        }
-                      },
-                      onToggleFavorite: () => _toggleFavorite(channel),
-                    );
-                  },
-                ),
-        ),
-      ],
+      ),
     );
   }
 
-  // ── 4-Layer Frameless Cinema Player Stage ─────────────────────────────────
-  Widget _buildPlayerStage(
-    BuildContext stageContext, {
-    required bool isFullscreen,
-    required double borderRadius,
-  }) {
+  // ───────────────────────────────────────────────────────────────────────────
+  //  Immersive Fullscreen Broadcast Stage & Clean Smoked-Glass HUD
+  // ───────────────────────────────────────────────────────────────────────────
+
+  Widget _buildFullscreenStage(BuildContext stageContext) {
     final VideoPlayerController? ctrl = _videoController;
     final bool hasValidSize =
         ctrl != null && _isVideoInitialized && !ctrl.value.size.isEmpty;
     final double videoW = hasValidSize ? ctrl.value.size.width : 1600.0;
     final double videoH = hasValidSize ? ctrl.value.size.height : 900.0;
+    final bool showLiveVideo =
+        ctrl != null && _isVideoInitialized && !_hasStreamError;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints stageBox) {
-          final bool wideHud = stageBox.maxWidth >= 520;
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints stageBox) {
+        final bool wideHud = stageBox.maxWidth >= 560;
 
-          return MouseRegion(
-            onHover: (_) => _revealHudTemporarily(),
-            child: Stack(
-              fit: StackFit.expand,
-              children: <Widget>[
-                // Layer 0: Velvet Studio Backdrop (Zero Black Box)
+        return MouseRegion(
+          onHover: (_) => _revealHudTemporarily(),
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              // Backdrop Image + Studio Canvas Spinner/Error Handling
+              CachedNetworkImage(
+                imageUrl: _activeChannel.backdropUrl,
+                fit: BoxFit.cover,
+                placeholder: (BuildContext context, String _) =>
+                    CinemaBackdropFallback(channel: _activeChannel),
+                errorWidget: (BuildContext context, String _, Object __) =>
+                    CinemaBackdropFallback(channel: _activeChannel),
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(
+                    alpha: showLiveVideo ? 0.0 : 0.45,
+                  ),
+                ),
+              ),
+              if ((_isLoadingStream && !_isVideoInitialized) || _hasStreamError)
                 AnimatedStudioCanvas(
                   animation: _studioAnimCtrl,
                   channel: _activeChannel,
@@ -1417,110 +1697,106 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                   onRetry: () => _loadChannel(_activeChannel, showOsd: false),
                 ),
 
-                // Layer 1: Hardware-Accelerated Video Surface
-                if (ctrl != null)
-                  AnimatedOpacity(
-                    opacity: _isVideoInitialized ? 1.0 : 0.0,
-                    duration: AppDurations.medium,
-                    child: SizedBox.expand(
-                      child: FittedBox(
-                        fit: _fillScreen ? BoxFit.cover : BoxFit.contain,
-                        clipBehavior: Clip.hardEdge,
-                        child: SizedBox(
-                          width: videoW,
-                          height: videoH,
-                          child: VideoPlayer(ctrl),
+              // Hardware-Accelerated Video Surface (Smooth 600ms Fade)
+              AnimatedOpacity(
+                opacity: showLiveVideo ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeOutCubic,
+                child: showLiveVideo
+                    ? SizedBox.expand(
+                        child: FittedBox(
+                          fit: _fillScreen ? BoxFit.cover : BoxFit.contain,
+                          clipBehavior: Clip.hardEdge,
+                          child: SizedBox(
+                            width: videoW,
+                            height: videoH,
+                            child: VideoPlayer(ctrl),
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
+                      )
+                    : const SizedBox.expand(),
+              ),
 
-                // Tap Surface to Toggle Frameless HUD
-                GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTap: _toggleHudVisibility,
-                  child: const SizedBox.expand(),
+              // Tap Surface to Toggle HUD
+              GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _toggleHudVisibility,
+                child: const SizedBox.expand(),
+              ),
+
+              // Quick OSD Zapping Banner when HUD is Auto-Hidden
+              if (_showOsdBanner && !_showHud)
+                PositionedDirectional(
+                  top: 20,
+                  start: 24,
+                  child: _buildOsdBanner(stageContext),
                 ),
 
-                // OSD Quick Channel Zapping Banner (when HUD is hidden)
-                if (_showOsdBanner && !_showHud)
-                  PositionedDirectional(
-                    top: 14,
-                    start: 14,
-                    child: _buildOsdBanner(stageContext),
-                  ),
-
-                // Layer 3: Auto-Hide Frameless Cinema HUD (2600ms)
-                IgnorePointer(
-                  ignoring: !_showHud,
-                  child: AnimatedOpacity(
-                    opacity: _showHud ? 1.0 : 0.0,
-                    duration: AppDurations.normal,
-                    child: DecoratedBox(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          stops: <double>[0.0, 0.24, 0.72, 1.0],
-                          colors: <Color>[
-                            Color(0xA6000000),
-                            Color(0x0A000000),
-                            Color(0x14000000),
-                            Color(0xBF000000),
-                          ],
-                        ),
+              // Auto-Hiding Smoked-Glass Broadcast HUD
+              IgnorePointer(
+                ignoring: !_showHud,
+                child: AnimatedOpacity(
+                  opacity: _showHud ? 1.0 : 0.0,
+                  duration: AppDurations.normal,
+                  child: DecoratedBox(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: <double>[0.0, 0.24, 0.72, 1.0],
+                        colors: <Color>[
+                          Color(0xB3000000),
+                          Color(0x0D000000),
+                          Color(0x14000000),
+                          Color(0xCC000000),
+                        ],
                       ),
-                      child: Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(
-                          isFullscreen ? 26 : 14,
-                          isFullscreen ? 22 : 12,
-                          isFullscreen ? 26 : 14,
-                          isFullscreen ? 20 : 10,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            _buildHudTopBar(
-                              stageContext,
-                              isFullscreen: isFullscreen,
-                              wideHud: wideHud,
-                            ),
-                            if (_isVideoInitialized &&
-                                !_isLoadingStream &&
-                                !_hasStreamError)
-                              _buildHudCenterControls(
-                                stageContext,
-                                wideHud: wideHud,
-                              )
-                            else
-                              const SizedBox.shrink(),
-                            _buildHudBottomBar(
-                              stageContext,
-                              isFullscreen: isFullscreen,
-                              wideHud: wideHud,
-                            ),
-                          ],
-                        ),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsetsDirectional.fromSTEB(
+                        wideHud ? 28 : 16,
+                        wideHud ? 22 : 14,
+                        wideHud ? 28 : 16,
+                        wideHud ? 22 : 14,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          _buildFullscreenHudTopBar(
+                            stageContext,
+                            wideHud: wideHud,
+                          ),
+                          if (_isVideoInitialized &&
+                              !_isLoadingStream &&
+                              !_hasStreamError)
+                            _buildFullscreenHudCenterControls(wideHud: wideHud)
+                          else
+                            const SizedBox.shrink(),
+                          _buildFullscreenHudBottomBar(
+                            stageContext,
+                            wideHud: wideHud,
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
+              ),
 
-                // Layer 4: Independent Smoked Glass Unmute Pill (Always Clickable)
-                if (_isMuted && _isVideoInitialized && !_hasStreamError)
-                  PositionedDirectional(
-                    bottom: _showHud ? (isFullscreen ? 68 : 54) : 14,
-                    start: isFullscreen ? 26 : 14,
-                    child: FloatingUnmutePill(
-                      pulseAnimation: _pulseAnimCtrl,
-                      onTap: _unmuteFromPill,
-                    ),
+              // Independent Tap-to-Unmute Pill if Muted Inside Fullscreen
+              if (_isMuted && _isVideoInitialized && !_hasStreamError)
+                PositionedDirectional(
+                  bottom: _showHud ? 74 : 20,
+                  start: wideHud ? 28 : 16,
+                  child: FloatingUnmutePill(
+                    pulseAnimation: _pulseAnimCtrl,
+                    onTap: _unmuteFromPill,
                   ),
-              ],
-            ),
-          );
-        },
-      ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1533,13 +1809,13 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
             color: LiveLuxuryPalette.velvetHudGlass,
             borderRadius: const BorderRadius.all(Radius.circular(14)),
             border: Border.all(
               color: LiveLuxuryPalette.hairlineMedium,
-              width: 0.6,
+              width: 0.7,
             ),
           ),
           child: Row(
@@ -1552,7 +1828,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               ),
               const SizedBox(width: 10),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 230),
+                constraints: const BoxConstraints(maxWidth: 250),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -1565,20 +1841,20 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                         context,
                         size: 12,
                         weight: FontWeight.w700,
-                        color: LiveLuxuryPalette.textPrimary,
+                        color: Colors.white,
                         tabular: true,
                       ),
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: 2),
                     Text(
                       current.title(ar),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: LiveBroadcastType.style(
                         context,
-                        size: 10.5,
+                        size: 11,
                         weight: FontWeight.w400,
-                        color: LiveLuxuryPalette.silverSecondary,
+                        color: LiveLuxuryPalette.cinemaSilver,
                       ),
                     ),
                   ],
@@ -1591,9 +1867,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     );
   }
 
-  Widget _buildHudTopBar(
+  Widget _buildFullscreenHudTopBar(
     BuildContext stageContext, {
-    required bool isFullscreen,
     required bool wideHud,
   }) {
     final bool ar = LiveBroadcastType.isAr(stageContext);
@@ -1604,7 +1879,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
     return Row(
       children: <Widget>[
-        NetworkEmblem(channel: _activeChannel, size: 30, borderRadius: 8),
+        NetworkEmblem(channel: _activeChannel, size: 34, borderRadius: 8),
         const SizedBox(width: 10),
         Flexible(
           child: Column(
@@ -1612,56 +1887,57 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                _activeChannel.name(ar),
+                'CH ${_activeChannel.number}  •  ${_activeChannel.name(ar)}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: LiveBroadcastType.style(
                   stageContext,
-                  size: wideHud ? 14 : 12.5,
-                  weight: FontWeight.w700,
-                  color: LiveLuxuryPalette.textPrimary,
+                  size: wideHud ? 14.5 : 13,
+                  weight: FontWeight.w800,
+                  color: Colors.white,
+                  tabular: true,
                 ),
               ),
-              if (isFullscreen)
-                Text(
-                  current.title(ar),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LiveBroadcastType.style(
-                    stageContext,
-                    size: 11.5,
-                    weight: FontWeight.w400,
-                    color: LiveLuxuryPalette.silverSecondary,
-                  ),
+              Text(
+                current.title(ar),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LiveBroadcastType.style(
+                  stageContext,
+                  size: 11.5,
+                  weight: FontWeight.w400,
+                  color: LiveLuxuryPalette.cinemaSilver,
                 ),
+              ),
             ],
           ),
         ),
         const SizedBox(width: 10),
 
-        // Smoked Glass • LIVE Pill (Restrained Ruby Dot)
+        // Pulsing • LIVE Badge
         AnimatedBuilder(
           animation: _pulseAnimCtrl,
           builder: (BuildContext context, _) {
             return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: const Color(0xB8121216),
                 borderRadius: const BorderRadius.all(Radius.circular(999)),
                 border: Border.all(
-                  color: LiveLuxuryPalette.hairlineMedium,
-                  width: 0.55,
+                  color: LiveLuxuryPalette.crimsonActiveRim
+                      .withValues(alpha: 0.45),
+                  width: 0.7,
                 ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Container(
-                    width: 5.5,
-                    height: 5.5,
+                    width: 6,
+                    height: 6,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: LiveLuxuryPalette.rubyLive.withValues(
+                      color: LiveLuxuryPalette.crimsonActiveRim.withValues(
                         alpha: 0.65 + 0.35 * _pulseAnimCtrl.value,
                       ),
                     ),
@@ -1671,10 +1947,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                     ar ? 'مباشر' : 'LIVE',
                     style: LiveBroadcastType.style(
                       stageContext,
-                      size: 10,
+                      size: 10.5,
                       weight: FontWeight.w700,
-                      color: LiveLuxuryPalette.textPrimary,
-                      letterSpacing: ar ? 0.0 : 0.7,
+                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -1684,16 +1959,15 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         ),
         const Spacer(),
 
-        // Calm Platinum Viewers Readout (Zero Neon Cyan)
         if (wideHud) ...<Widget>[
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
             decoration: BoxDecoration(
               color: const Color(0x9E101014),
               borderRadius: const BorderRadius.all(Radius.circular(999)),
               border: Border.all(
                 color: LiveLuxuryPalette.hairlineSubtle,
-                width: 0.5,
+                width: 0.6,
               ),
             ),
             child: Row(
@@ -1701,17 +1975,17 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               children: <Widget>[
                 const Icon(
                   Icons.visibility_outlined,
-                  size: 13,
-                  color: LiveLuxuryPalette.silverSecondary,
+                  size: 13.5,
+                  color: LiveLuxuryPalette.cinemaSilver,
                 ),
                 const SizedBox(width: 5),
                 Text(
                   _formattedViewers,
                   style: LiveBroadcastType.style(
                     stageContext,
-                    size: 11,
-                    weight: FontWeight.w500,
-                    color: const Color(0xFFC4C4CE),
+                    size: 11.5,
+                    weight: FontWeight.w600,
+                    color: Colors.white,
                     tabular: true,
                   ),
                 ),
@@ -1721,19 +1995,19 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           const SizedBox(width: 8),
         ],
 
-        // Smoked Glass Quality Selector (Soft Champagne Typography)
+        // Quality Selector Pill
         MouseRegion(
           cursor: SystemMouseCursors.click,
           child: GestureDetector(
             onTap: () => _openQualitySheet(stageContext),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
               decoration: BoxDecoration(
                 color: const Color(0xB8121216),
                 borderRadius: const BorderRadius.all(Radius.circular(999)),
                 border: Border.all(
                   color: LiveLuxuryPalette.hairlineMedium,
-                  width: 0.6,
+                  width: 0.7,
                 ),
               ),
               child: Row(
@@ -1743,17 +2017,16 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                     qualityLabel,
                     style: LiveBroadcastType.style(
                       stageContext,
-                      size: 10.5,
+                      size: 11,
                       weight: FontWeight.w700,
                       color: LiveLuxuryPalette.champagneSoft,
-                      letterSpacing: 0.3,
                       tabular: true,
                     ),
                   ),
                   const SizedBox(width: 4),
                   const Icon(
                     Icons.tune_rounded,
-                    size: 11.5,
+                    size: 12,
                     color: LiveLuxuryPalette.champagneSoft,
                   ),
                 ],
@@ -1761,55 +2034,59 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             ),
           ),
         ),
+        const SizedBox(width: 8),
 
-        if (isFullscreen) ...<Widget>[
-          const SizedBox(width: 8),
-          _HudCircleBtn(
-            icon: Icons.close_rounded,
-            size: 34,
-            iconSize: 17.5,
-            onTap: () => Navigator.of(stageContext).maybePop(),
-          ),
-        ],
+        // On-Demand Schedule Sheet Trigger inside Fullscreen
+        _HudCircleBtn(
+          icon: Icons.calendar_month_rounded,
+          size: 36,
+          iconSize: 16.5,
+          onTap: () => _openScheduleSheet(stageContext, fromFullscreen: true),
+        ),
+        const SizedBox(width: 8),
+
+        // Close Fullscreen Button
+        _HudCircleBtn(
+          icon: Icons.close_rounded,
+          size: 36,
+          iconSize: 18.5,
+          onTap: () => Navigator.of(stageContext).maybePop(),
+        ),
       ],
     );
   }
 
-  Widget _buildHudCenterControls(
-    BuildContext stageContext, {
-    required bool wideHud,
-  }) {
+  Widget _buildFullscreenHudCenterControls({required bool wideHud}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         _HudCircleBtn(
           icon: Icons.skip_previous_rounded,
-          size: wideHud ? 42 : 38,
-          iconSize: wideHud ? 22 : 19,
+          size: wideHud ? 46 : 40,
+          iconSize: wideHud ? 24 : 20,
           onTap: () => _stepChannel(-1),
         ),
-        SizedBox(width: wideHud ? 24 : 16),
+        SizedBox(width: wideHud ? 26 : 18),
         _HudCircleBtn(
           icon: _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-          size: wideHud ? 56 : 48,
-          iconSize: wideHud ? 28 : 24,
+          size: wideHud ? 60 : 50,
+          iconSize: wideHud ? 30 : 26,
           isPrimary: true,
           onTap: _togglePlayPause,
         ),
-        SizedBox(width: wideHud ? 24 : 16),
+        SizedBox(width: wideHud ? 26 : 18),
         _HudCircleBtn(
           icon: Icons.skip_next_rounded,
-          size: wideHud ? 42 : 38,
-          iconSize: wideHud ? 22 : 19,
+          size: wideHud ? 46 : 40,
+          iconSize: wideHud ? 24 : 20,
           onTap: () => _stepChannel(1),
         ),
       ],
     );
   }
 
-  Widget _buildHudBottomBar(
+  Widget _buildFullscreenHudBottomBar(
     BuildContext stageContext, {
-    required bool isFullscreen,
     required bool wideHud,
   }) {
     final bool ar = LiveBroadcastType.isAr(stageContext);
@@ -1820,24 +2097,31 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        // Ultra-Thin 2px Monochrome Luxury Progress Hairline (Zero Rainbow)
+        // Sleek 2.2px Crimson-Tipped Broadcast Progress Hairline
         ClipRRect(
           borderRadius: const BorderRadius.all(Radius.circular(2)),
           child: Container(
-            height: 2.0,
+            height: 2.2,
             width: double.infinity,
-            color: Colors.white.withValues(alpha: 0.14),
+            color: Colors.white.withValues(alpha: 0.16),
             alignment: AlignmentDirectional.centerStart,
             child: FractionallySizedBox(
               widthFactor: progress,
-              child: const ColoredBox(
-                color: Color(0xEBFFFFFF),
+              child: const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: <Color>[
+                      LiveLuxuryPalette.crimsonCtaStart,
+                      LiveLuxuryPalette.crimsonActiveRim,
+                    ],
+                  ),
+                ),
                 child: SizedBox.expand(),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Row(
           children: <Widget>[
             _HudCircleBtn(
@@ -1846,13 +2130,13 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                   : (_volume < 0.5
                       ? Icons.volume_down_rounded
                       : Icons.volume_up_rounded),
-              size: 34,
-              iconSize: 17.5,
+              size: 36,
+              iconSize: 18,
               onTap: _toggleMute,
             ),
             if (wideHud) ...<Widget>[
               SizedBox(
-                width: 90,
+                width: 96,
                 height: 28,
                 child: SliderTheme(
                   data: SliderTheme.of(stageContext).copyWith(
@@ -1863,8 +2147,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                     overlayShape: const RoundSliderOverlayShape(
                       overlayRadius: 10,
                     ),
-                    activeTrackColor: Colors.white.withValues(alpha: 0.88),
-                    inactiveTrackColor: Colors.white.withValues(alpha: 0.20),
+                    activeTrackColor: Colors.white.withValues(alpha: 0.90),
+                    inactiveTrackColor: Colors.white.withValues(alpha: 0.22),
                     thumbColor: Colors.white,
                     overlayColor: Colors.white.withValues(alpha: 0.12),
                   ),
@@ -1879,21 +2163,21 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             EqualizerBars(
               animation: _eqAnimCtrl,
               isActive: audioActive,
-              color: const Color(0xFFD8D8E2),
-              height: 12,
-              barWidth: 1.8,
+              color: const Color(0xFFE0E0EA),
+              height: 13,
+              barWidth: 2.0,
             ),
             const Spacer(),
 
-            // Smoked Glass Live Edge Pill
+            // Jump to Live Edge Pill
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: _jumpToLiveEdge,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
+                    horizontal: 11,
+                    vertical: 5.5,
                   ),
                   decoration: BoxDecoration(
                     color: const Color(0xB8121216),
@@ -1907,11 +2191,11 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       Container(
-                        width: 5,
-                        height: 5,
+                        width: 5.5,
+                        height: 5.5,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: LiveLuxuryPalette.rubyLive,
+                          color: LiveLuxuryPalette.crimsonActiveRim,
                         ),
                       ),
                       const SizedBox(width: 5),
@@ -1919,10 +2203,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                         ar ? 'اللحظة الحية' : 'LIVE EDGE',
                         style: LiveBroadcastType.style(
                           stageContext,
-                          size: 10,
+                          size: 10.5,
                           weight: FontWeight.w700,
-                          color: const Color(0xFFE6E6EE),
-                          letterSpacing: ar ? 0.0 : 0.4,
+                          color: Colors.white,
                         ),
                       ),
                     ],
@@ -1930,33 +2213,29 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                 ),
               ),
             ),
-            const SizedBox(width: 7),
+            const SizedBox(width: 8),
 
             // Fit / Cover Aspect Ratio Toggle
             _HudCircleBtn(
               icon: _fillScreen
                   ? Icons.fit_screen_rounded
                   : Icons.aspect_ratio_rounded,
-              size: 34,
-              iconSize: 16.5,
+              size: 36,
+              iconSize: 17,
               onTap: () {
                 setState(() => _fillScreen = !_fillScreen);
                 _notifyPlayerSync();
                 _revealHudTemporarily();
               },
             ),
-            const SizedBox(width: 7),
+            const SizedBox(width: 8),
 
-            // Fullscreen Toggle
+            // Exit Fullscreen Button
             _HudCircleBtn(
-              icon: isFullscreen
-                  ? Icons.fullscreen_exit_rounded
-                  : Icons.fullscreen_rounded,
-              size: 34,
-              iconSize: 18.5,
-              onTap: isFullscreen
-                  ? () => Navigator.of(stageContext).maybePop()
-                  : _openFullscreenPlayer,
+              icon: Icons.fullscreen_exit_rounded,
+              size: 36,
+              iconSize: 19,
+              onTap: () => Navigator.of(stageContext).maybePop(),
             ),
           ],
         ),
@@ -1966,8 +2245,454 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Smoked Obsidian Liquid-Glass HUD Circle Button & Fullscreen Stage
+//  Supporting Cinema Micro-Components (Design 4 + Design 5)
 // ─────────────────────────────────────────────────────────────────────────────
+
+class _MinimalCategoryTab extends StatefulWidget {
+  final String label;
+  final bool isSelected;
+  final bool isWide;
+  final VoidCallback onTap;
+
+  const _MinimalCategoryTab({
+    required this.label,
+    required this.isSelected,
+    required this.isWide,
+    required this.onTap,
+  });
+
+  @override
+  State<_MinimalCategoryTab> createState() => _MinimalCategoryTabState();
+}
+
+class _MinimalCategoryTabState extends State<_MinimalCategoryTab> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color textColor = widget.isSelected
+        ? Colors.white
+        : (_hovered
+            ? Colors.white.withValues(alpha: 0.88)
+            : LiveLuxuryPalette.cinemaSilver.withValues(alpha: 0.78));
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              widget.label,
+              style: LiveBroadcastType.style(
+                context,
+                size: widget.isWide ? 13.5 : 12.8,
+                weight: widget.isSelected ? FontWeight.w800 : FontWeight.w500,
+                color: textColor,
+              ),
+            ),
+            const SizedBox(height: 5),
+            AnimatedContainer(
+              duration: AppDurations.normal,
+              curve: Curves.easeOutCubic,
+              height: 2.0,
+              width: widget.isSelected ? 22.0 : 0.0,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.all(Radius.circular(2)),
+                gradient: const LinearGradient(
+                  colors: <Color>[
+                    Colors.white,
+                    LiveLuxuryPalette.crimsonActiveRim,
+                  ],
+                ),
+                boxShadow: widget.isSelected
+                    ? const <BoxShadow>[
+                        BoxShadow(
+                          color: Color(0x80FF2A3C),
+                          blurRadius: 8,
+                        ),
+                      ]
+                    : null,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassCircleIconBtn extends StatefulWidget {
+  final IconData icon;
+  final double size;
+  final double iconSize;
+  final Color iconColor;
+  final bool isActive;
+  final Color? activeBorderColor;
+  final VoidCallback onTap;
+
+  const _GlassCircleIconBtn({
+    required this.icon,
+    required this.size,
+    required this.iconSize,
+    required this.onTap,
+    this.iconColor = Colors.white,
+    this.isActive = false,
+    this.activeBorderColor,
+  });
+
+  @override
+  State<_GlassCircleIconBtn> createState() => _GlassCircleIconBtnState();
+}
+
+class _GlassCircleIconBtnState extends State<_GlassCircleIconBtn> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color borderColor = widget.isActive
+        ? (widget.activeBorderColor ?? Colors.white.withValues(alpha: 0.34))
+        : Colors.white.withValues(alpha: _hovered ? 0.28 : 0.16);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: ClipOval(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: AnimatedContainer(
+              duration: AppDurations.fast,
+              width: widget.size,
+              height: widget.size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(
+                  alpha: _hovered ? 0.14 : (widget.isActive ? 0.12 : 0.07),
+                ),
+                border: Border.all(color: borderColor, width: 1.0),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                widget.icon,
+                size: widget.iconSize,
+                color: widget.iconColor,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroGlassPill extends StatelessWidget {
+  final String label;
+  final Widget? leading;
+  final Color? backgroundColor;
+  final Color? borderColor;
+  final double maxWidth;
+  final bool tabular;
+  final VoidCallback? onTap;
+
+  const _HeroGlassPill({
+    required this.label,
+    required this.maxWidth,
+    this.leading,
+    this.backgroundColor,
+    this.borderColor,
+    this.tabular = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget pill = ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.all(Radius.circular(999)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+            decoration: BoxDecoration(
+              color: backgroundColor ?? Colors.white.withValues(alpha: 0.08),
+              borderRadius: const BorderRadius.all(Radius.circular(999)),
+              border: Border.all(
+                color: borderColor ?? Colors.white.withValues(alpha: 0.18),
+                width: 0.85,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (leading != null) ...<Widget>[
+                  leading!,
+                  const SizedBox(width: 6),
+                ],
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LiveBroadcastType.style(
+                      context,
+                      size: 11.2,
+                      weight: FontWeight.w700,
+                      color: Colors.white.withValues(alpha: 0.95),
+                      tabular: tabular,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (onTap == null) {
+      return pill;
+    }
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(onTap: onTap, child: pill),
+    );
+  }
+}
+
+class _PrimaryCrimsonCtaBtn extends StatefulWidget {
+  final String label;
+  final bool compact;
+  final VoidCallback onTap;
+
+  const _PrimaryCrimsonCtaBtn({
+    required this.label,
+    required this.compact,
+    required this.onTap,
+  });
+
+  @override
+  State<_PrimaryCrimsonCtaBtn> createState() => _PrimaryCrimsonCtaBtnState();
+}
+
+class _PrimaryCrimsonCtaBtnState extends State<_PrimaryCrimsonCtaBtn> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final double scale = _pressed ? 0.97 : (_hovered ? 1.025 : 1.0);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() {
+        _hovered = false;
+        _pressed = false;
+      }),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: scale,
+          duration: AppDurations.fast,
+          curve: Curves.easeOutCubic,
+          child: Container(
+            height: widget.compact ? 42 : 46,
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.compact ? 20 : 24,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.all(Radius.circular(30)),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: <Color>[
+                  LiveLuxuryPalette.crimsonCtaStart,
+                  LiveLuxuryPalette.crimsonCtaEnd,
+                ],
+              ),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: LiveLuxuryPalette.crimsonCtaStart.withValues(
+                    alpha: _hovered ? 0.52 : 0.38,
+                  ),
+                  blurRadius: _hovered ? 26 : 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Icon(
+                  Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: 21,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  widget.label,
+                  style: LiveBroadcastType.style(
+                    context,
+                    size: widget.compact ? 13.2 : 14.0,
+                    weight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SecondaryGlassCtaBtn extends StatefulWidget {
+  final String label;
+  final bool compact;
+  final VoidCallback onTap;
+
+  const _SecondaryGlassCtaBtn({
+    required this.label,
+    required this.compact,
+    required this.onTap,
+  });
+
+  @override
+  State<_SecondaryGlassCtaBtn> createState() => _SecondaryGlassCtaBtnState();
+}
+
+class _SecondaryGlassCtaBtnState extends State<_SecondaryGlassCtaBtn> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final double scale = _pressed ? 0.97 : (_hovered ? 1.02 : 1.0);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() {
+        _hovered = false;
+        _pressed = false;
+      }),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: scale,
+          duration: AppDurations.fast,
+          curve: Curves.easeOutCubic,
+          child: ClipRRect(
+            borderRadius: const BorderRadius.all(Radius.circular(30)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: AnimatedContainer(
+                duration: AppDurations.fast,
+                height: widget.compact ? 42 : 46,
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.compact ? 18 : 22,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: _hovered ? 0.13 : 0.08),
+                  borderRadius: const BorderRadius.all(Radius.circular(30)),
+                  border: Border.all(
+                    color:
+                        Colors.white.withValues(alpha: _hovered ? 0.30 : 0.20),
+                    width: 1.0,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(
+                      Icons.calendar_month_rounded,
+                      color: Colors.white.withValues(alpha: 0.92),
+                      size: 16.5,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      widget.label,
+                      style: LiveBroadcastType.style(
+                        context,
+                        size: widget.compact ? 13.0 : 13.8,
+                        weight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RailArrowBtn extends StatefulWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _RailArrowBtn({
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  State<_RailArrowBtn> createState() => _RailArrowBtnState();
+}
+
+class _RailArrowBtnState extends State<_RailArrowBtn> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: AppDurations.fast,
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withValues(alpha: _hovered ? 0.14 : 0.06),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: _hovered ? 0.32 : 0.18),
+              width: 0.9,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Icon(
+            widget.icon,
+            size: 18,
+            color: Colors.white.withValues(alpha: _hovered ? 1.0 : 0.85),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _HudCircleBtn extends StatelessWidget {
   final IconData icon;
@@ -1999,19 +2724,19 @@ class _HudCircleBtn extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isPrimary
-                    ? const Color(0xCF14141A)
+                    ? LiveLuxuryPalette.crimsonCtaStart.withValues(alpha: 0.88)
                     : LiveLuxuryPalette.velvetHudGlass,
                 border: Border.all(
                   color: Colors.white.withValues(
-                    alpha: isPrimary ? 0.22 : 0.14,
+                    alpha: isPrimary ? 0.30 : 0.16,
                   ),
-                  width: isPrimary ? 0.75 : 0.6,
+                  width: isPrimary ? 1.0 : 0.7,
                 ),
                 boxShadow: isPrimary
                     ? const <BoxShadow>[
                         BoxShadow(
-                          color: Color(0x73000000),
-                          blurRadius: 18,
+                          color: Color(0x66FF1E2D),
+                          blurRadius: 20,
                           offset: Offset(0, 6),
                         ),
                       ]
