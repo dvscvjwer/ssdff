@@ -1,50 +1,47 @@
 import 'dart:math' as math;
-import 'dart:ui' show FontFeature, ImageFilter, PointerDeviceKind;
-
+import 'dart:ui' show FontFeature, ImageFilter;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
-
 // ─────────────────────────────────────────────────────────────────────────────
-//  Quiet Luxury Palette — SkyLive Broadcast v4.0 (Apple TV+ & B&O Restraint)
+//  Crimson Cinema & Full-Bleed Minimalist Palette — SkyLive Broadcast v5.0
+//  (SlothUI Design 4 Glowing Showcase + HBO Design 5 Open Backdrop)
 // ─────────────────────────────────────────────────────────────────────────────
-
 class LiveLuxuryPalette {
   LiveLuxuryPalette._();
-
-  // ── Obsidian & Smoked Surfaces (92% Base) ──
-  static const Color obsidianCanvas  = AppColors.background; // #050505 خلفية الصفحة
-  static const Color smokedPanel     = Color(0xFF0D0D10);    // حاوية دليل القنوات والمسارات الغائرة
-  static const Color obsidianCard    = Color(0xFF101014);    // البطاقات الفاخرة الموحدة (ActiveProgram / Scorebug / Schedule)
-  static const Color salonTile       = Color(0xFF131318);    // بطاقة القناة العادية وحقل البحث
-  static const Color salonTileActive = Color(0xFF17171C);    // بطاقة القناة النشطة المخملية
-  static const Color mutedPill       = Color(0xFF1C1C23);    // كبسولة النتيجة/الدقيقة الداكنة الصامتة
-  static const Color velvetHudGlass  = Color(0xCC0E0E12);    // زجاج أسود مخملي لـ FloatingUnmutePill وأزرار الـ HUD
-
-  // ── Specular Hairlines (0.5px – 0.8px) ──
-  static const Color hairlineSubtle  = Color(0x12FFFFFF);    // ~7% أبيض للبطاقات والفواصل الشعرية
-  static const Color hairlineMedium  = Color(0x24FFFFFF);    // ~14% أبيض للكبسولات العائمة والقناة النشطة
-
-  // ── Platinum & Rare Accents (6% Silver + 2% Ruby/Champagne) ──
-  static const Color textPrimary     = AppColors.textPrimary; // #FFFFFF
-  static const Color silverSecondary = Color(0xFF9E9EA8);    // نصوص ثانوية، اسم البرنامج في الدليل، الساعة، المشاهدون
-  static const Color silverMuted     = Color(0xFF686874);    // أرقام القنوات (01)، النقاط الفاصلة (•)، الأيقونات الخافتة
-  static const Color champagneSoft   = Color(0xFFD6BA8A);    // نص شامبانيا هادئ حصراً لعبارة 4K HDR بدون خلفية صفراء
-  static const Color rubyLive        = AppColors.primary;    // #E50914 حصراً لنقطة البث (6-7px) ومؤشر التفعيل والقلب النشط
+  // ── Obsidian & Smoked Surfaces ──
+  static const Color obsidianCanvas    = AppColors.background; // #050505
+  static const Color smokedPanel       = Color(0xFF0D0D10);
+  static const Color obsidianCard      = Color(0xFF101014);
+  static const Color salonTile         = Color(0xFF131318);
+  static const Color salonTileActive   = Color(0xFF17171C);
+  static const Color mutedPill         = Color(0xFF1C1C23);
+  static const Color velvetHudGlass    = Color(0xCC0E0E12);
+  // ── Specular Hairlines ──
+  static const Color hairlineSubtle    = Color(0x12FFFFFF);
+  static const Color hairlineMedium    = Color(0x24FFFFFF);
+  // ── SlothUI Crimson Cinema + HBO Warm Minimalist Accents ──
+  static const Color textPrimary       = AppColors.textPrimary; // #FFFFFF
+  static const Color silverSecondary   = Color(0xFF9E9EA8);
+  static const Color silverMuted       = Color(0xFF686874);
+  static const Color cinemaSilver      = Color(0xFFB0B4C0);
+  static const Color champagneSoft     = Color(0xFFD6BA8A);
+  static const Color warmNowStreaming  = Color(0xFFF5A623);
+  static const Color rubyLive          = AppColors.primary;    // #E50914
+  static const Color crimsonActiveRim  = Color(0xFFFF2A3C);    // Design 4 active card rim & progress
+  static const Color crimsonActiveGlow = Color(0x75E50914);    // Design 4 active card halo
+  static const Color crimsonCtaStart   = Color(0xFFFF1E2D);
+  static const Color crimsonCtaEnd     = Color(0xFFD90712);
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
-//  Typography & RTL/LTR Engine — SkyLive Broadcast v4.0
+//  Typography & RTL/LTR Engine — SkyLive Broadcast v5.0
 // ─────────────────────────────────────────────────────────────────────────────
-
 class LiveBroadcastType {
   LiveBroadcastType._();
-
   static bool isAr(BuildContext context) =>
       Localizations.localeOf(context).languageCode == 'ar';
-
   static TextStyle style(
     BuildContext context, {
     required double size,
@@ -58,7 +55,6 @@ class LiveBroadcastType {
     final bool arabic = isAr(context);
     final List<FontFeature>? features =
         tabular ? const <FontFeature>[FontFeature.tabularFigures()] : null;
-
     if (arabic) {
       return AppTextStyles.arabic(
         fontSize: size,
@@ -67,7 +63,6 @@ class LiveBroadcastType {
         height: height,
       ).copyWith(fontFeatures: features);
     }
-
     if (display) {
       return GoogleFonts.outfit(
         fontSize: size,
@@ -78,7 +73,6 @@ class LiveBroadcastType {
         fontFeatures: features,
       );
     }
-
     return GoogleFonts.inter(
       fontSize: size,
       fontWeight: weight,
@@ -89,57 +83,52 @@ class LiveBroadcastType {
     );
   }
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
-//  Broadcast Domain Models (Bilingual AR / EN + Dynamic EPG)
+//  Broadcast Domain Models (Bilingual AR / EN + Dynamic EPG + Verified Backdrops)
 // ─────────────────────────────────────────────────────────────────────────────
-
 enum LiveCategory {
   all,
-  favorites,
   sports,
   movies,
-  news,
   entertainment,
+  news,
+  favorites,
 }
-
 extension LiveCategoryX on LiveCategory {
-  String label(BuildContext context, AppLocalizations? l10n) {
+  String label(BuildContext context, [AppLocalizations? l10n]) {
     final bool ar = LiveBroadcastType.isAr(context);
     switch (this) {
       case LiveCategory.all:
         return l10n?.liveCatAll ?? (ar ? 'الكل' : 'All');
+      case LiveCategory.sports:
+        return l10n?.liveCatSports ?? (ar ? 'رياضة' : 'Sports');
+      case LiveCategory.movies:
+        return l10n?.liveCatMovies ?? (ar ? 'أفلام' : 'Movies');
+      case LiveCategory.entertainment:
+        return l10n?.liveCatDocs ?? (ar ? 'وثائقي' : 'Docs');
+      case LiveCategory.news:
+        return l10n?.liveCatNews ?? (ar ? 'أخبار' : 'News');
       case LiveCategory.favorites:
         return ar ? 'المفضلة' : 'Favorites';
-      case LiveCategory.sports:
-        return l10n?.liveCatSports ?? (ar ? 'الرياضة' : 'Sports');
-      case LiveCategory.movies:
-        return l10n?.liveCatMovies ?? (ar ? 'الأفلام' : 'Movies');
-      case LiveCategory.news:
-        return l10n?.liveCatNews ?? (ar ? 'الأخبار' : 'News');
-      case LiveCategory.entertainment:
-        return ar ? 'الوثائقيات والترفيه' : 'Docs & Ent.';
     }
   }
-
   IconData get icon {
     switch (this) {
       case LiveCategory.all:
         return Icons.grid_view_rounded;
-      case LiveCategory.favorites:
-        return Icons.favorite_rounded;
       case LiveCategory.sports:
         return Icons.sports_soccer_rounded;
       case LiveCategory.movies:
         return Icons.local_movies_rounded;
-      case LiveCategory.news:
-        return Icons.public_rounded;
       case LiveCategory.entertainment:
         return Icons.explore_rounded;
+      case LiveCategory.news:
+        return Icons.public_rounded;
+      case LiveCategory.favorites:
+        return Icons.favorite_rounded;
     }
   }
 }
-
 enum EmblemStyle {
   royalGold,
   ribbonSplit,
@@ -148,7 +137,6 @@ enum EmblemStyle {
   newsTicker,
   cinemaGlow,
 }
-
 class LiveMatchInfo {
   final String competitionAr;
   final String competitionEn;
@@ -170,7 +158,6 @@ class LiveMatchInfo {
   final int awayShotsOnTarget;
   final String eventsAr;
   final String eventsEn;
-
   const LiveMatchInfo({
     required this.competitionAr,
     required this.competitionEn,
@@ -193,21 +180,20 @@ class LiveMatchInfo {
     required this.eventsAr,
     required this.eventsEn,
   });
-
   String competition(bool ar) => ar ? competitionAr : competitionEn;
   String stage(bool ar) => ar ? stageAr : stageEn;
   String homeTeam(bool ar) => ar ? homeTeamAr : homeTeamEn;
   String awayTeam(bool ar) => ar ? awayTeamAr : awayTeamEn;
   String events(bool ar) => ar ? eventsAr : eventsEn;
+  String summaryPill(bool ar) =>
+      '${homeTeam(ar)} $homeScore - $awayScore ${awayTeam(ar)}  •  $minuteLabel';
 }
-
 class EpgProgramSeed {
   final String titleAr;
   final String titleEn;
   final String descAr;
   final String descEn;
   final int durationMinutes;
-
   const EpgProgramSeed({
     required this.titleAr,
     required this.titleEn,
@@ -216,7 +202,6 @@ class EpgProgramSeed {
     required this.durationMinutes,
   });
 }
-
 class EpgSlot {
   final String id;
   final String titleAr;
@@ -226,7 +211,6 @@ class EpgSlot {
   final DateTime startTime;
   final DateTime endTime;
   final bool isLive;
-
   const EpgSlot({
     required this.id,
     required this.titleAr,
@@ -237,10 +221,8 @@ class EpgSlot {
     required this.endTime,
     required this.isLive,
   });
-
   String title(bool ar) => ar ? titleAr : titleEn;
   String description(bool ar) => ar ? descAr : descEn;
-
   double progressAt(DateTime now) {
     final int totalSec = endTime.difference(startTime).inSeconds;
     if (totalSec <= 0) {
@@ -249,22 +231,18 @@ class EpgSlot {
     final int elapsedSec = now.difference(startTime).inSeconds;
     return (elapsedSec / totalSec).clamp(0.06, 0.96);
   }
-
   int remainingMinutesAt(DateTime now) {
     final int mins = endTime.difference(now).inMinutes;
     return mins < 1 ? 1 : mins;
   }
-
   static String formatClock(DateTime dt) {
     final String h = dt.hour.toString().padLeft(2, '0');
     final String m = dt.minute.toString().padLeft(2, '0');
     return '$h:$m';
   }
-
   String get timeRangeLabel =>
       '${formatClock(startTime)} - ${formatClock(endTime)}';
 }
-
 class LiveChannel {
   final String id;
   final String number;
@@ -281,12 +259,12 @@ class LiveChannel {
   final Color brandAccent;
   final EmblemStyle emblemStyle;
   final String streamUrl;
+  final String backdropUrl;
   final int initialSeekSeconds;
   final double baseViewersK;
   final int liveElapsedMinutes;
   final LiveMatchInfo? liveMatch;
   final List<EpgProgramSeed> programSeeds;
-
   const LiveChannel({
     required this.id,
     required this.number,
@@ -303,16 +281,15 @@ class LiveChannel {
     required this.brandAccent,
     required this.emblemStyle,
     required this.streamUrl,
+    required this.backdropUrl,
     required this.initialSeekSeconds,
     required this.baseViewersK,
     required this.liveElapsedMinutes,
     required this.programSeeds,
     this.liveMatch,
   });
-
   String name(bool ar) => ar ? nameAr : nameEn;
   String audioTag(bool ar) => ar ? audioTagAr : audioTagEn;
-
   List<EpgSlot> buildSchedule(DateTime now) {
     final DateTime anchorMinute =
         DateTime(now.year, now.month, now.day, now.hour, now.minute);
@@ -341,17 +318,14 @@ class LiveChannel {
     return result;
   }
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
-//  13 World-Class Channels Catalog (100% CORS Verified HTTPS H.264 MP4s)
+//  13 World-Class Channels Catalog
+//  (100% HTTP-200 Verified H.264 MP4 Streams + 16:9 Unsplash Cinema Backdrops)
 // ─────────────────────────────────────────────────────────────────────────────
-
 class LiveBroadcastCatalog {
   LiveBroadcastCatalog._();
-
   static const String fallbackStreamUrl =
       'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4';
-
   static const List<LiveChannel> channels = <LiveChannel>[
     LiveChannel(
       id: 'bein_1_premium',
@@ -369,6 +343,8 @@ class LiveBroadcastCatalog {
       brandAccent: Color(0xFFFFD700),
       emblemStyle: EmblemStyle.royalGold,
       streamUrl: 'https://res.cloudinary.com/demo/video/upload/forest_bike.mp4',
+      backdropUrl:
+          'https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=1600&h=900&q=85',
       initialSeekSeconds: 1,
       baseViewersK: 128.4,
       liveElapsedMinutes: 67,
@@ -398,12 +374,12 @@ class LiveBroadcastCatalog {
       ),
       programSeeds: <EpgProgramSeed>[
         EpgProgramSeed(
-          titleAr: 'مباشر: ريال مدريد × مانشستر سيتي',
-          titleEn: 'LIVE: Real Madrid vs Manchester City',
+          titleAr: 'ريال مدريد × مانشستر سيتي — ليالي الأبطال',
+          titleEn: 'Real Madrid vs Manchester City — UCL Live',
           descAr:
-              'قمة ليالي الأبطال بتغطية استوديو 4K HDR مع إحصائيات تكتيكية حية وكاميرات خاصة.',
+              'قمة ربع نهائي دوري أبطال أوروبا بتغطية استوديو 4K HDR مع إحصائيات تكتيكية حية وكاميرات الملعب الخاصة.',
           descEn:
-              'Champions League blockbuster in native 4K HDR with live tactical telemetry and studio analysis.',
+              'Champions League blockbuster in native 4K HDR with live tactical telemetry and pitch-side analysis.',
           durationMinutes: 105,
         ),
         EpgProgramSeed(
@@ -445,6 +421,8 @@ class LiveBroadcastCatalog {
       brandAccent: Color(0xFF00E5FF),
       emblemStyle: EmblemStyle.ribbonSplit,
       streamUrl: 'https://res.cloudinary.com/demo/video/upload/snow_horses.mp4',
+      backdropUrl:
+          'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1600&h=900&q=85',
       initialSeekSeconds: 1,
       baseViewersK: 96.2,
       liveElapsedMinutes: 81,
@@ -474,10 +452,10 @@ class LiveBroadcastCatalog {
       ),
       programSeeds: <EpgProgramSeed>[
         EpgProgramSeed(
-          titleAr: 'مباشر: ليفربول × أرسنال (قمة البريميرليغ)',
-          titleEn: 'LIVE: Liverpool vs Arsenal — Super Sunday',
+          titleAr: 'ليفربول × أرسنال — قمة البريميرليغ',
+          titleEn: 'Liverpool vs Arsenal — Super Sunday',
           descAr:
-              'صراع الصدارة المشتعل من ملعب أنفيلد مع إحصائيات السرعة والضغط العالي.',
+              'صراع الصدارة المشتعل من ملعب أنفيلد مع إحصائيات السرعة والضغط العالي لحظة بلحظة.',
           descEn:
               'Title-deciding clash live from Anfield with real-time sprint and pressing metrics.',
           durationMinutes: 100,
@@ -522,6 +500,8 @@ class LiveBroadcastCatalog {
       emblemStyle: EmblemStyle.saudiCrest,
       streamUrl:
           'https://res.cloudinary.com/demo/video/upload/samples/cld-sample-video.mp4',
+      backdropUrl:
+          'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=1600&h=900&q=85',
       initialSeekSeconds: 1,
       baseViewersK: 112.9,
       liveElapsedMinutes: 74,
@@ -551,10 +531,10 @@ class LiveBroadcastCatalog {
       ),
       programSeeds: <EpgProgramSeed>[
         EpgProgramSeed(
-          titleAr: 'مباشر: الهلال × النصر — ديربي الرياض',
-          titleEn: 'LIVE: Al-Hilal vs Al-Nassr — Riyadh Derby',
+          titleAr: 'الهلال × النصر — ديربي الرياض الكبير',
+          titleEn: 'Al-Hilal vs Al-Nassr — Riyadh Super Derby',
           descAr:
-              'قمة دوري روشن السعودي بنقل جوي عبر كاميرات العنكبوت و28 كاميرا سينمائية.',
+              'قمة دوري روشن السعودي بنقل جوي عبر كاميرات العنكبوت و28 كاميرا سينمائية من المملكة أرينا.',
           descEn:
               'Roshn Saudi League derby broadcast with spider-cam aerials and 28 cinema cameras.',
           durationMinutes: 100,
@@ -599,6 +579,8 @@ class LiveBroadcastCatalog {
       emblemStyle: EmblemStyle.cinemaGlow,
       streamUrl:
           'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+      backdropUrl:
+          'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?auto=format&fit=crop&w=1600&h=900&q=85',
       initialSeekSeconds: 1,
       baseViewersK: 68.5,
       liveElapsedMinutes: 53,
@@ -626,10 +608,10 @@ class LiveBroadcastCatalog {
       ),
       programSeeds: <EpgProgramSeed>[
         EpgProgramSeed(
-          titleAr: 'مباشر 360°: برشلونة × بايرن ميونخ',
-          titleEn: 'LIVE 360°: Barcelona vs Bayern Munich',
+          titleAr: 'برشلونة × بايرن ميونخ — البث التكتيكي 360°',
+          titleEn: 'Barcelona vs Bayern Munich — 360° Tactical Feed',
           descAr:
-              'بث خاص بزاوية تكتيكية كاملة للملعب مع خريطة التمريرات الحية.',
+              'بث خاص بزاوية تكتيكية شاملة لكامل الملعب مع خريطة التمريرات والسرعات اللحظية.',
           descEn:
               'Full-pitch tactical camera angle enhanced with live passing network overlays.',
           durationMinutes: 95,
@@ -642,7 +624,7 @@ class LiveBroadcastCatalog {
           durationMinutes: 45,
         ),
         EpgProgramSeed(
-          titleAr: 'سباق الفورمولا 1: التجارب الحرة',
+          titleAr: 'سباق الفورمولا 1: التجارب الحرة الليلية',
           titleEn: 'Formula 1 Night Practice Feed',
           descAr: 'تغطية مباشرة من الحلبة مع القياسات الحية للإطارات والسرعة.',
           descEn: 'Trackside live feed with telemetry, sector splits, and team radio.',
@@ -673,15 +655,17 @@ class LiveBroadcastCatalog {
       brandAccent: Color(0xFF00E5FF),
       emblemStyle: EmblemStyle.cinemaGlow,
       streamUrl: 'https://vjs.zencdn.net/v/oceans.mp4',
+      backdropUrl:
+          'https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1600&h=900&q=85',
       initialSeekSeconds: 4,
       baseViewersK: 44.1,
       liveElapsedMinutes: 38,
       programSeeds: <EpgProgramSeed>[
         EpgProgramSeed(
-          titleAr: 'الملحمة السينمائية: أعماق المحيط المجهول (4K)',
+          titleAr: 'أعماق المحيط المجهول (نسخة 4K السينمائية)',
           titleEn: 'Oceans: The Deep Horizon (4K Remaster)',
           descAr:
-              'تحفة بصرية تأخذك في رحلة سينمائية مذهلة عبر العوالم الخفية بتقنية HDR10+.',
+              'تحفة سينمائية تأخذك في رحلة بصرية غامرة عبر العوالم البحرية الخفية بتقنية HDR10+ ودولبي أتموس.',
           descEn:
               'Breathtaking widescreen theatrical odyssey restored in native 4K HDR10+.',
           durationMinutes: 90,
@@ -726,6 +710,8 @@ class LiveBroadcastCatalog {
       emblemStyle: EmblemStyle.ribbonSplit,
       streamUrl:
           'https://res.cloudinary.com/demo/video/upload/glide-over-coastal-beach.mp4',
+      backdropUrl:
+          'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&h=900&q=85',
       initialSeekSeconds: 1,
       baseViewersK: 31.7,
       liveElapsedMinutes: 29,
@@ -734,7 +720,7 @@ class LiveBroadcastCatalog {
           titleAr: 'أفق الساحل الذهبي: الهروب الكبير',
           titleEn: 'Golden Coastline: The Grand Escape',
           descAr:
-              'إثارة وتشويق على حافة الهاوية بتصوير جوي سينمائي فائق النقاء.',
+              'إثارة وتشويق على حافة الهاوية بتصوير جوي سينمائي عريض وعدسات IMAX فائقة النقاء.',
           descEn:
               'High-stakes coastal thriller shot on large-format aerial cinema lenses.',
           durationMinutes: 85,
@@ -749,7 +735,7 @@ class LiveBroadcastCatalog {
         EpgProgramSeed(
           titleAr: 'نادي النقاد السينمائي',
           titleEn: 'Sky Cinema Red Carpet Special',
-          descAr: 'جولة خاصة في أحدث العروض العالمية ومهرانات السينما الدولية.',
+          descAr: 'جولة خاصة في أحدث العروض العالمية ومهرجانات السينما الدولية.',
           descEn: 'Exclusive premieres and red-carpet interviews from global festivals.',
           durationMinutes: 40,
         ),
@@ -779,6 +765,8 @@ class LiveBroadcastCatalog {
       emblemStyle: EmblemStyle.cinemaGlow,
       streamUrl:
           'https://res.cloudinary.com/demo/video/upload/samples/dance-2.mp4',
+      backdropUrl:
+          'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1600&h=900&q=85',
       initialSeekSeconds: 1,
       baseViewersK: 27.5,
       liveElapsedMinutes: 44,
@@ -787,7 +775,7 @@ class LiveBroadcastCatalog {
           titleAr: 'ليلة الأضواء الهوليوودية الكبرى',
           titleEn: 'Hollywood Spotlight Premiere',
           descAr:
-              'عرض أول لأحدث إنتاجات هوليوود الموسيقية والدرامية بدون أي فواصل إعلانية.',
+              'عرض أول وحصري لأحدث إنتاجات هوليوود الدرامية والموسيقية بدون أي فواصل إعلانية.',
           descEn:
               'First-run Hollywood showcase uncut and completely commercial-free.',
           durationMinutes: 95,
@@ -832,6 +820,8 @@ class LiveBroadcastCatalog {
       emblemStyle: EmblemStyle.newsTicker,
       streamUrl:
           'https://res.cloudinary.com/demo/video/upload/docs/walking_talking.mp4',
+      backdropUrl:
+          'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1600&h=900&q=85',
       initialSeekSeconds: 1,
       baseViewersK: 63.8,
       liveElapsedMinutes: 22,
@@ -840,7 +830,7 @@ class LiveBroadcastCatalog {
           titleAr: 'حصاد اليوم الإخباري المباشر',
           titleEn: 'Global News Hour — Live Coverage',
           descAr:
-              'تغطية ميدانية حية عبر شبكة المراسلين في العواصم العالمية وتحليل آخر المستجدات.',
+              'تغطية ميدانية حية عبر شبكة المراسلين في العواصم العالمية وتحليل معمق لآخر المستجدات.',
           descEn:
               'Breaking international dispatches from bureaus across the globe.',
           durationMinutes: 60,
@@ -885,6 +875,8 @@ class LiveBroadcastCatalog {
       emblemStyle: EmblemStyle.newsTicker,
       streamUrl:
           'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
+      backdropUrl:
+          'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=1600&h=900&q=85',
       initialSeekSeconds: 0,
       baseViewersK: 39.2,
       liveElapsedMinutes: 16,
@@ -893,7 +885,7 @@ class LiveBroadcastCatalog {
           titleAr: 'غرفة الأخبار العاجلة والأسواق',
           titleEn: 'World Breaking Briefing',
           descAr:
-              'آخر الأنباء العاجلة، تحديثات التكنولوجيا، وموجز الأسواق المالية لحظة بلحظة.',
+              'آخر الأنباء العاجلة، تحديثات التكنولوجيا، وموجز الأسواق المالية العالمية لحظة بلحظة.',
           descEn:
               'Up-to-the-minute world headlines, tech breakthroughs, and market pulse.',
           durationMinutes: 45,
@@ -938,6 +930,8 @@ class LiveBroadcastCatalog {
       emblemStyle: EmblemStyle.yellowPortal,
       streamUrl:
           'https://res.cloudinary.com/demo/video/upload/samples/elephants.mp4',
+      backdropUrl:
+          'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=1600&h=900&q=85',
       initialSeekSeconds: 1,
       baseViewersK: 29.6,
       liveElapsedMinutes: 31,
@@ -946,7 +940,7 @@ class LiveBroadcastCatalog {
           titleAr: 'أسرار البرية الأفريقية 4K: عمالقة السافانا',
           titleEn: 'Untamed Savanna 4K: Giants of Africa',
           descAr:
-              'عدسات فائقة الدقة ترصد رحلة الفيلة والأسود في قلب السافانا الأفريقية.',
+              'عدسات سينمائية فائقة الدقة ترصد رحلة الفيلة والأسود المهيبة في قلب السافانا الأفريقية.',
           descEn:
               'Ultra-HD wildlife cinematography following majestic elephant herds.',
           durationMinutes: 60,
@@ -991,6 +985,8 @@ class LiveBroadcastCatalog {
       emblemStyle: EmblemStyle.cinemaGlow,
       streamUrl:
           'https://res.cloudinary.com/demo/video/upload/samples/sea-turtle.mp4',
+      backdropUrl:
+          'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1600&h=900&q=85',
       initialSeekSeconds: 1,
       baseViewersK: 22.4,
       liveElapsedMinutes: 19,
@@ -999,7 +995,7 @@ class LiveBroadcastCatalog {
           titleAr: 'عالم المرجان الأزرق: استكشاف الأعماق',
           titleEn: 'Blue Reef Odyssey: Deep Dive UHD',
           descAr:
-              'مهمة علمية حديثة لتصوير الشعاب المرجانية النادرة بتقنيات الإضاءة الطيفية.',
+              'مهمة علمية حديثة لتصوير الشعاب المرجانية النادرة والكائنات البحرية بتقنيات الإضاءة الطيفية.',
           descEn:
               'Marine expedition capturing rare coral ecosystems in true-color UHD.',
           durationMinutes: 60,
@@ -1037,24 +1033,26 @@ class LiveBroadcastCatalog {
       qualityTag: '1080p FHD',
       audioTagAr: 'ترجمة عربية فورية',
       audioTagEn: 'ACTION • AR SUBS',
-      category: LiveCategory.entertainment,
+      category: LiveCategory.movies,
       brandPrimary: Color(0xFFFF5500),
       brandSecondary: Color(0xFF151515),
       brandAccent: Color(0xFFFFB400),
       emblemStyle: EmblemStyle.ribbonSplit,
       streamUrl:
           'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4',
+      backdropUrl:
+          'https://images.unsplash.com/photo-1541447271487-09612b3f49f7?auto=format&fit=crop&w=1600&h=900&q=85',
       initialSeekSeconds: 0,
       baseViewersK: 51.0,
       liveElapsedMinutes: 27,
       programSeeds: <EpgProgramSeed>[
         EpgProgramSeed(
-          titleAr: 'تحدي السرعة والأدرينالين المباشر',
-          titleEn: 'Adrenaline Rush: Extreme Challenge',
+          titleAr: 'تحدي السرعة والفورمولا الليلي المباشر',
+          titleEn: 'Night Formula & Adrenaline Rush',
           descAr:
-              'منافسات سرعة ومغامرات تحبس الأنفاس بمشاركة نخبة المحترفين عالمياً.',
+              'منافسات سرعة خارقة وتحديات حلبات ليلية تحبس الأنفاس بمشاركة نخبة السائقين عالمياً.',
           descEn:
-              'High-octane motorsport stunts and extreme precision challenges.',
+              'High-octane night track motorsport stunts and extreme precision challenges.',
           durationMinutes: 60,
         ),
         EpgProgramSeed(
@@ -1090,13 +1088,15 @@ class LiveBroadcastCatalog {
       qualityTag: '4K HDR',
       audioTagAr: 'ياباني أصلي • ترجمة عربية',
       audioTagEn: 'JP AUDIO • AR/EN SUBS',
-      category: LiveCategory.entertainment,
+      category: LiveCategory.movies,
       brandPrimary: Color(0xFFFF007F),
       brandSecondary: Color(0xFF3A0CA3),
       brandAccent: Color(0xFF00E5FF),
       emblemStyle: EmblemStyle.royalGold,
       streamUrl:
           'https://cdn.jsdelivr.net/gh/mediaelement/mediaelement-files@master/big_buck_bunny.mp4',
+      backdropUrl:
+          'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1600&h=900&q=85',
       initialSeekSeconds: 12,
       baseViewersK: 47.3,
       liveElapsedMinutes: 35,
@@ -1105,9 +1105,9 @@ class LiveBroadcastCatalog {
           titleAr: 'ماراثون عالم الأنمي والخيال (بث متواصل)',
           titleEn: 'Fantasy Anime Marathon (Non-Stop)',
           descAr:
-              'مغامرات ملحمية وتحريك سينمائي فائق السلاسة بمعدل 60 إطاراً في الثانية.',
+              'مغامرات ملحمية في أضواء طوكيو المستقبلية وتحريك سينمائي فائق السلاسة بمعدل 60 إطاراً.',
           descEn:
-              'Epic animated adventure remastered with vibrant HDR colors.',
+              'Epic animated adventure remastered with vibrant Neo-Tokyo HDR colors.',
           durationMinutes: 75,
         ),
         EpgProgramSeed(
@@ -1135,33 +1135,26 @@ class LiveBroadcastCatalog {
     ),
   ];
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
-//  1. NetworkEmblem — Velvet Anodized Broadcast Emblem with Specular Glass Rim
+//  1. NetworkEmblem — Compact Velvet Broadcast Badge (Design 4 Corner Emblem)
 // ─────────────────────────────────────────────────────────────────────────────
-
 class NetworkEmblem extends StatelessWidget {
   final LiveChannel channel;
   final double size;
   final double borderRadius;
-
   const NetworkEmblem({
     super.key,
     required this.channel,
-    this.size = 42,
-    this.borderRadius = 11,
+    this.size = 28,
+    this.borderRadius = 7,
   });
-
-  Color _temper(Color c, [double darkness = 0.20]) =>
+  Color _temper(Color c, [double darkness = 0.16]) =>
       Color.lerp(c, const Color(0xFF0E0E12), darkness)!;
-
   Color _temperAccent(Color c) =>
-      Color.lerp(c, const Color(0xFFE8E4DC), 0.24)!;
-
+      Color.lerp(c, const Color(0xFFE8E4DC), 0.20)!;
   @override
   Widget build(BuildContext context) {
     final BorderRadius radius = BorderRadius.all(Radius.circular(borderRadius));
-
     return Container(
       width: size,
       height: size,
@@ -1169,9 +1162,9 @@ class NetworkEmblem extends StatelessWidget {
         borderRadius: radius,
         boxShadow: const <BoxShadow>[
           BoxShadow(
-            color: Color(0x52000000),
+            color: Color(0x66000000),
             blurRadius: 8,
-            offset: Offset(0, 3),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -1188,16 +1181,16 @@ class NetworkEmblem extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    stops: const <double>[0.0, 0.42, 1.0],
+                    stops: const <double>[0.0, 0.45, 1.0],
                     colors: <Color>[
-                      Colors.white.withValues(alpha: 0.09),
-                      Colors.white.withValues(alpha: 0.02),
+                      Colors.white.withValues(alpha: 0.14),
+                      Colors.white.withValues(alpha: 0.03),
                       Colors.transparent,
                     ],
                   ),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    width: 0.55,
+                    color: Colors.white.withValues(alpha: 0.18),
+                    width: 0.6,
                   ),
                 ),
               ),
@@ -1207,23 +1200,22 @@ class NetworkEmblem extends StatelessWidget {
       ),
     );
   }
-
   Widget _buildStyledBody() {
     switch (channel.emblemStyle) {
       case EmblemStyle.yellowPortal:
         final Color portalTone = _temperAccent(channel.brandAccent);
         return Container(
-          color: _temper(channel.brandSecondary, 0.18),
+          color: _temper(channel.brandSecondary, 0.14),
           padding: EdgeInsets.all(size * 0.11),
           child: Row(
             children: <Widget>[
               Container(
-                width: size * 0.17,
+                width: size * 0.18,
                 height: double.infinity,
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: portalTone,
-                    width: size >= 40 ? 1.5 : 1.1,
+                    width: size >= 36 ? 1.5 : 1.1,
                   ),
                   borderRadius: const BorderRadius.all(Radius.circular(2)),
                 ),
@@ -1262,12 +1254,11 @@ class NetworkEmblem extends StatelessWidget {
             ],
           ),
         );
-
       case EmblemStyle.ribbonSplit:
         return Column(
           children: <Widget>[
             Expanded(
-              flex: 53,
+              flex: 54,
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -1275,22 +1266,22 @@ class NetworkEmblem extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: <Color>[
-                      _temper(channel.brandPrimary, 0.18),
-                      _temper(channel.brandPrimary, 0.30),
+                      _temper(channel.brandPrimary, 0.10),
+                      _temper(channel.brandPrimary, 0.24),
                     ],
                   ),
                 ),
                 alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 3),
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     channel.emblemTop,
                     style: GoogleFonts.outfit(
                       color: Colors.white,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w900,
                       fontSize: 12.5,
-                      letterSpacing: 0.7,
+                      letterSpacing: 0.6,
                     ),
                   ),
                 ),
@@ -1298,24 +1289,24 @@ class NetworkEmblem extends StatelessWidget {
             ),
             Container(
               height: 0.6,
-              color: Colors.white.withValues(alpha: 0.20),
+              color: Colors.white.withValues(alpha: 0.22),
             ),
             Expanded(
-              flex: 47,
+              flex: 46,
               child: Container(
                 width: double.infinity,
-                color: _temper(channel.brandSecondary, 0.22),
+                color: _temper(channel.brandSecondary, 0.18),
                 alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 3),
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     channel.emblemBottom,
                     style: GoogleFonts.inter(
-                      color: Colors.white.withValues(alpha: 0.88),
+                      color: Colors.white.withValues(alpha: 0.90),
                       fontWeight: FontWeight.w700,
                       fontSize: 8.0,
-                      letterSpacing: 0.55,
+                      letterSpacing: 0.45,
                     ),
                   ),
                 ),
@@ -1323,7 +1314,6 @@ class NetworkEmblem extends StatelessWidget {
             ),
           ],
         );
-
       case EmblemStyle.saudiCrest:
         final Color crestTone = _temperAccent(channel.brandAccent);
         return Container(
@@ -1332,8 +1322,8 @@ class NetworkEmblem extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: <Color>[
-                _temper(channel.brandPrimary, 0.20),
-                _temper(channel.brandSecondary, 0.26),
+                _temper(channel.brandPrimary, 0.14),
+                _temper(channel.brandSecondary, 0.22),
               ],
             ),
           ),
@@ -1345,12 +1335,12 @@ class NetworkEmblem extends StatelessWidget {
                 start: 0,
                 end: 0,
                 child: Container(
-                  height: size * 0.055,
-                  color: crestTone.withValues(alpha: 0.72),
+                  height: size * 0.06,
+                  color: crestTone.withValues(alpha: 0.78),
                 ),
               ),
               Padding(
-                padding: EdgeInsets.all(size * 0.12),
+                padding: EdgeInsets.all(size * 0.11),
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Column(
@@ -1360,31 +1350,20 @@ class NetworkEmblem extends StatelessWidget {
                         channel.emblemTop,
                         style: GoogleFonts.outfit(
                           color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14.5,
-                          letterSpacing: 0.8,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          letterSpacing: 0.7,
                           height: 1.0,
                         ),
                       ),
-                      const SizedBox(height: 2.5),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.28),
-                          borderRadius: const BorderRadius.all(Radius.circular(4)),
-                          border: Border.all(
-                            color: crestTone.withValues(alpha: 0.38),
-                            width: 0.5,
-                          ),
-                        ),
-                        child: Text(
-                          channel.emblemBottom,
-                          style: GoogleFonts.inter(
-                            color: crestTone,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 7.5,
-                            letterSpacing: 0.5,
-                          ),
+                      const SizedBox(height: 2),
+                      Text(
+                        channel.emblemBottom,
+                        style: GoogleFonts.inter(
+                          color: crestTone,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 7.5,
+                          letterSpacing: 0.45,
                         ),
                       ),
                     ],
@@ -1394,16 +1373,16 @@ class NetworkEmblem extends StatelessWidget {
             ],
           ),
         );
-
       case EmblemStyle.newsTicker:
-        final Color wordmarkTone = Color.lerp(channel.brandPrimary, Colors.white, 0.22)!;
+        final Color wordmarkTone =
+            Color.lerp(channel.brandPrimary, Colors.white, 0.26)!;
         return Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: <Color>[
-                _temper(channel.brandSecondary, 0.20),
+                _temper(channel.brandSecondary, 0.16),
                 const Color(0xFF0A0C12),
               ],
             ),
@@ -1413,7 +1392,7 @@ class NetworkEmblem extends StatelessWidget {
               Expanded(
                 child: Center(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
@@ -1431,18 +1410,18 @@ class NetworkEmblem extends StatelessWidget {
               ),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-                color: _temper(channel.brandPrimary, 0.22),
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1.5),
+                color: _temper(channel.brandPrimary, 0.16),
                 alignment: Alignment.center,
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     channel.emblemBottom,
                     style: GoogleFonts.inter(
-                      color: Colors.white.withValues(alpha: 0.94),
+                      color: Colors.white.withValues(alpha: 0.95),
                       fontWeight: FontWeight.w800,
-                      fontSize: 7.2,
-                      letterSpacing: 0.5,
+                      fontSize: 7.0,
+                      letterSpacing: 0.45,
                     ),
                   ),
                 ),
@@ -1450,7 +1429,6 @@ class NetworkEmblem extends StatelessWidget {
             ],
           ),
         );
-
       case EmblemStyle.royalGold:
       case EmblemStyle.cinemaGlow:
         final bool isGold = channel.emblemStyle == EmblemStyle.royalGold;
@@ -1460,8 +1438,8 @@ class NetworkEmblem extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: <Color>[
-                _temper(channel.brandPrimary, 0.20),
-                _temper(channel.brandSecondary, 0.26),
+                _temper(channel.brandPrimary, 0.12),
+                _temper(channel.brandSecondary, 0.22),
               ],
             ),
           ),
@@ -1476,7 +1454,7 @@ class NetworkEmblem extends StatelessWidget {
                   height: size * 0.62,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: Colors.white.withValues(alpha: 0.08),
                   ),
                 ),
               ),
@@ -1491,22 +1469,22 @@ class NetworkEmblem extends StatelessWidget {
                         channel.emblemTop,
                         style: GoogleFonts.outfit(
                           color: Colors.white,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w900,
                           fontSize: 13.0,
-                          letterSpacing: 0.45,
+                          letterSpacing: 0.4,
                           height: 1.05,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 1.5),
                       Text(
                         channel.emblemBottom,
                         style: GoogleFonts.inter(
                           color: isGold
                               ? LiveLuxuryPalette.champagneSoft
-                              : Colors.white.withValues(alpha: 0.84),
+                              : Colors.white.withValues(alpha: 0.88),
                           fontWeight: FontWeight.w700,
-                          fontSize: 7.8,
-                          letterSpacing: 0.65,
+                          fontSize: 7.6,
+                          letterSpacing: 0.55,
                         ),
                       ),
                     ],
@@ -1519,18 +1497,814 @@ class NetworkEmblem extends StatelessWidget {
     }
   }
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
-//  2. EqualizerBars — Refined Platinum Audio Activity Waveform
+//  2. CinemaChannelCard — SlothUI Design 4 Glowing 16:9 Showcase Card
 // ─────────────────────────────────────────────────────────────────────────────
-
+class CinemaChannelCard extends StatefulWidget {
+  final LiveChannel channel;
+  final DateTime now;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final double width;
+  final double height;
+  final bool isFavorite;
+  final VoidCallback? onToggleFavorite;
+  const CinemaChannelCard({
+    super.key,
+    required this.channel,
+    required this.now,
+    required this.isSelected,
+    required this.onTap,
+    this.width = 236,
+    this.height = 134,
+    this.isFavorite = false,
+    this.onToggleFavorite,
+  });
+  @override
+  State<CinemaChannelCard> createState() => _CinemaChannelCardState();
+}
+class _CinemaChannelCardState extends State<CinemaChannelCard> {
+  bool _isHovered = false;
+  bool _isPressed = false;
+  double get _cardScale {
+    if (_isPressed) {
+      return 0.985;
+    }
+    if (widget.isSelected) {
+      return 1.02;
+    }
+    if (_isHovered) {
+      return 1.012;
+    }
+    return 1.0;
+  }
+  @override
+  Widget build(BuildContext context) {
+    final bool ar = LiveBroadcastType.isAr(context);
+    final EpgSlot slot = widget.channel.buildSchedule(widget.now).first;
+    final double progress = slot.progressAt(widget.now);
+    final LiveMatchInfo? match = widget.channel.liveMatch;
+    final String topMetaLabel = match != null
+        ? 'CH ${widget.channel.number}  •  ${match.homeShort} ${match.homeScore} - ${match.awayScore} ${match.awayShort}'
+        : 'CH ${widget.channel.number}  •  ${slot.timeRangeLabel}';
+    const BorderRadius outerRadius = BorderRadius.all(Radius.circular(14));
+    const BorderRadius innerRadius = BorderRadius.all(Radius.circular(12.4));
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() {
+        _isHovered = false;
+        _isPressed = false;
+      }),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _cardScale,
+          duration: AppDurations.normal,
+          curve: Curves.easeOutCubic,
+          child: AnimatedContainer(
+            duration: AppDurations.normal,
+            curve: Curves.easeOutCubic,
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              borderRadius: outerRadius,
+              border: widget.isSelected
+                  ? Border.all(
+                      color: LiveLuxuryPalette.crimsonActiveRim,
+                      width: 1.8,
+                    )
+                  : Border.all(
+                      color: Colors.white.withValues(
+                        alpha: _isHovered ? 0.30 : 0.14,
+                      ),
+                      width: 1.0,
+                    ),
+              boxShadow: widget.isSelected
+                  ? const <BoxShadow>[
+                      BoxShadow(
+                        color: LiveLuxuryPalette.crimsonActiveGlow,
+                        blurRadius: 20,
+                        spreadRadius: 1,
+                        offset: Offset(0, 4),
+                      ),
+                      BoxShadow(
+                        color: Color(0x73000000),
+                        blurRadius: 14,
+                        offset: Offset(0, 6),
+                      ),
+                    ]
+                  : <BoxShadow>[
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: _isHovered ? 0.56 : 0.38,
+                        ),
+                        blurRadius: _isHovered ? 16 : 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+            ),
+            child: ClipRRect(
+              borderRadius: innerRadius,
+              child: Stack(
+                fit: StackFit.expand,
+                children: <Widget>[
+                  CinemaBackdropFallback(channel: widget.channel),
+                  CachedNetworkImage(
+                    imageUrl: widget.channel.backdropUrl,
+                    fit: BoxFit.cover,
+                    fadeInDuration: const Duration(milliseconds: 260),
+                    placeholder: (BuildContext context, String _) =>
+                        CinemaBackdropFallback(channel: widget.channel),
+                    errorWidget: (BuildContext context, String _, Object __) =>
+                        CinemaBackdropFallback(channel: widget.channel),
+                  ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const <double>[0.0, 0.34, 0.58, 1.0],
+                        colors: <Color>[
+                          Colors.black.withValues(alpha: 0.58),
+                          Colors.black.withValues(alpha: 0.08),
+                          Colors.black.withValues(alpha: 0.44),
+                          Colors.black.withValues(alpha: 0.86),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (_isHovered && !widget.isSelected)
+                    ColoredBox(
+                      color: Colors.white.withValues(alpha: 0.04),
+                    ),
+                  Padding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      12,
+                      10,
+                      12,
+                      10,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: <Widget>[
+                            if (match != null) ...<Widget>[
+                              Container(
+                                width: 5.5,
+                                height: 5.5,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: LiveLuxuryPalette.crimsonActiveRim,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                            ],
+                            Expanded(
+                              child: Text(
+                                topMetaLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: LiveBroadcastType.style(
+                                  context,
+                                  size: 11,
+                                  weight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.88),
+                                  tabular: true,
+                                ).copyWith(
+                                  shadows: const <Shadow>[
+                                    Shadow(
+                                      color: Color(0x99000000),
+                                      blurRadius: 6,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            NetworkEmblem(
+                              channel: widget.channel,
+                              size: 28,
+                              borderRadius: 7,
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: <Widget>[
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    widget.channel.name(ar),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: LiveBroadcastType.style(
+                                      context,
+                                      size: 13.5,
+                                      weight: FontWeight.w800,
+                                      color: Colors.white,
+                                      height: 1.18,
+                                    ).copyWith(
+                                      shadows: const <Shadow>[
+                                        Shadow(
+                                          color: Color(0xB3000000),
+                                          blurRadius: 8,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    slot.title(ar),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: LiveBroadcastType.style(
+                                      context,
+                                      size: 11,
+                                      weight: FontWeight.w500,
+                                      color: const Color(0xFFC8CCD8),
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                value: progress,
+                                strokeWidth: 2.2,
+                                backgroundColor: Colors.white24,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  widget.isSelected
+                                      ? LiveLuxuryPalette.crimsonActiveRim
+                                      : Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+class CinemaBackdropFallback extends StatelessWidget {
+  final LiveChannel channel;
+  const CinemaBackdropFallback({
+    super.key,
+    required this.channel,
+  });
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[
+            Color.lerp(const Color(0xFF0E0E15), channel.brandPrimary, 0.34)!,
+            Color.lerp(const Color(0xFF08080D), channel.brandSecondary, 0.42)!,
+            const Color(0xFF050507),
+          ],
+        ),
+      ),
+    );
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+//  3. CinemaScheduleSheet — On-Demand Frosted Glass Schedule & Reminder Sheet
+// ─────────────────────────────────────────────────────────────────────────────
+class CinemaScheduleSheet extends StatefulWidget {
+  final LiveChannel channel;
+  final DateTime? now;
+  final List<EpgSlot>? slots;
+  final Set<String> remindedSlotIds;
+  final ValueChanged<EpgSlot> onToggleReminder;
+  final VoidCallback? onWatchLive;
+  const CinemaScheduleSheet({
+    super.key,
+    required this.channel,
+    this.now,
+    this.slots,
+    this.remindedSlotIds = const <String>{},
+    required this.onToggleReminder,
+    this.onWatchLive,
+  });
+  static Future<void> show(
+    BuildContext context, {
+    required LiveChannel channel,
+    DateTime? now,
+    List<EpgSlot>? slots,
+    Set<String> remindedSlotIds = const <String>{},
+    required ValueChanged<EpgSlot> onToggleReminder,
+    VoidCallback? onWatchLive,
+  }) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CinemaScheduleSheet(
+        channel: channel,
+        now: now,
+        slots: slots,
+        remindedSlotIds: remindedSlotIds,
+        onToggleReminder: onToggleReminder,
+        onWatchLive: onWatchLive,
+      ),
+    );
+  }
+  @override
+  State<CinemaScheduleSheet> createState() => _CinemaScheduleSheetState();
+}
+class _CinemaScheduleSheetState extends State<CinemaScheduleSheet> {
+  late Set<String> _localRemindedIds;
+  @override
+  void initState() {
+    super.initState();
+    _localRemindedIds = Set<String>.from(widget.remindedSlotIds);
+  }
+  @override
+  void didUpdateWidget(covariant CinemaScheduleSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.remindedSlotIds != widget.remindedSlotIds) {
+      _localRemindedIds = Set<String>.from(widget.remindedSlotIds);
+    }
+  }
+  void _handleToggleReminder(EpgSlot slot) {
+    setState(() {
+      if (_localRemindedIds.contains(slot.id)) {
+        _localRemindedIds.remove(slot.id);
+      } else {
+        _localRemindedIds.add(slot.id);
+      }
+    });
+    widget.onToggleReminder(slot);
+  }
+  @override
+  Widget build(BuildContext context) {
+    final bool ar = LiveBroadcastType.isAr(context);
+    final DateTime effectiveNow = widget.now ?? DateTime.now();
+    final List<EpgSlot> schedule =
+        widget.slots ?? widget.channel.buildSchedule(effectiveNow);
+    final LiveMatchInfo? match = widget.channel.liveMatch;
+    final double maxSheetHeight = MediaQuery.sizeOf(context).height * 0.78;
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 640,
+          maxHeight: maxSheetHeight,
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xEB0B0B10),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  width: 0.8,
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 18),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Center(
+                        child: Container(
+                          width: 38,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.20),
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(2)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: <Widget>[
+                          NetworkEmblem(
+                            channel: widget.channel,
+                            size: 42,
+                            borderRadius: 10,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  widget.channel.name(ar),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: LiveBroadcastType.style(
+                                    context,
+                                    size: 16.5,
+                                    weight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  ar
+                                      ? 'قناة ${widget.channel.number}  •  ${widget.channel.qualityTag}  •  جدول البث والتذكيرات'
+                                      : 'CH ${widget.channel.number}  •  ${widget.channel.qualityTag}  •  Broadcast Schedule',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: LiveBroadcastType.style(
+                                    context,
+                                    size: 11.5,
+                                    weight: FontWeight.w500,
+                                    color: LiveLuxuryPalette.cinemaSilver,
+                                    tabular: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            visualDensity: VisualDensity.compact,
+                            icon: Icon(
+                              Icons.close_rounded,
+                              size: 20,
+                              color: Colors.white.withValues(alpha: 0.68),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (match != null) ...<Widget>[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 9,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.05),
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(12)),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.10),
+                              width: 0.7,
+                            ),
+                          ),
+                          child: Row(
+                            children: <Widget>[
+                              Container(
+                                width: 6.5,
+                                height: 6.5,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: LiveLuxuryPalette.crimsonActiveRim,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '${match.competition(ar)}  •  ${match.summaryPill(ar)}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: LiveBroadcastType.style(
+                                    context,
+                                    size: 12,
+                                    weight: FontWeight.w600,
+                                    color: Colors.white,
+                                    tabular: true,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 14),
+                      Flexible(
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          padding: EdgeInsets.zero,
+                          itemCount: schedule.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (BuildContext context, int index) {
+                            final EpgSlot slot = schedule[index];
+                            final bool isLive = slot.isLive;
+                            final bool isReminded =
+                                _localRemindedIds.contains(slot.id);
+                            final int remainingMins =
+                                slot.remainingMinutesAt(effectiveNow);
+                            final String badgeLabel = isLive
+                                ? (ar ? 'يُبث الآن' : 'LIVE NOW')
+                                : index == 1
+                                    ? (ar ? 'التالي' : 'UP NEXT')
+                                    : (ar ? 'لاحقاً' : 'LATER');
+                            return Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: isLive
+                                    ? LiveLuxuryPalette.crimsonActiveRim
+                                        .withValues(alpha: 0.10)
+                                    : Colors.white.withValues(alpha: 0.04),
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(15),
+                                ),
+                                border: Border.all(
+                                  color: isLive
+                                      ? LiveLuxuryPalette.crimsonActiveRim
+                                          .withValues(alpha: 0.55)
+                                      : Colors.white.withValues(alpha: 0.10),
+                                  width: isLive ? 1.1 : 0.7,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Row(
+                                    children: <Widget>[
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isLive
+                                              ? LiveLuxuryPalette
+                                                  .crimsonActiveRim
+                                              : Colors.white
+                                                  .withValues(alpha: 0.08),
+                                          borderRadius: const BorderRadius.all(
+                                            Radius.circular(999),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          badgeLabel,
+                                          style: LiveBroadcastType.style(
+                                            context,
+                                            size: 10.5,
+                                            weight: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 9),
+                                      Expanded(
+                                        child: Text(
+                                          isLive
+                                              ? '${slot.timeRangeLabel}  •  ${ar ? 'متبقي $remainingMins د' : '${remainingMins}m left'}'
+                                              : slot.timeRangeLabel,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: LiveBroadcastType.style(
+                                            context,
+                                            size: 11.5,
+                                            weight: FontWeight.w600,
+                                            color: isLive
+                                                ? LiveLuxuryPalette
+                                                    .warmNowStreaming
+                                                : LiveLuxuryPalette
+                                                    .cinemaSilver,
+                                            tabular: true,
+                                          ),
+                                        ),
+                                      ),
+                                      if (isLive && widget.onWatchLive != null)
+                                        InkWell(
+                                          onTap: () {
+                                            Navigator.of(context).pop();
+                                            widget.onWatchLive!();
+                                          },
+                                          borderRadius: const BorderRadius.all(
+                                            Radius.circular(999),
+                                          ),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 5,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.12),
+                                              borderRadius:
+                                                  const BorderRadius.all(
+                                                Radius.circular(999),
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: <Widget>[
+                                                const Icon(
+                                                  Icons.play_arrow_rounded,
+                                                  size: 15,
+                                                  color: Colors.white,
+                                                ),
+                                                const SizedBox(width: 3),
+                                                Text(
+                                                  ar ? 'مشاهدة' : 'Watch',
+                                                  style:
+                                                      LiveBroadcastType.style(
+                                                    context,
+                                                    size: 11,
+                                                    weight: FontWeight.w700,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        )
+                                      else if (!isLive)
+                                        Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: () =>
+                                                _handleToggleReminder(slot),
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                              Radius.circular(999),
+                                            ),
+                                            child: AnimatedContainer(
+                                              duration: AppDurations.fast,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 5,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: isReminded
+                                                    ? LiveLuxuryPalette
+                                                        .warmNowStreaming
+                                                        .withValues(alpha: 0.18)
+                                                    : Colors.white.withValues(
+                                                        alpha: 0.07,
+                                                      ),
+                                                borderRadius:
+                                                    const BorderRadius.all(
+                                                  Radius.circular(999),
+                                                ),
+                                                border: Border.all(
+                                                  color: isReminded
+                                                      ? LiveLuxuryPalette
+                                                          .warmNowStreaming
+                                                          .withValues(
+                                                          alpha: 0.55,
+                                                        )
+                                                      : Colors.white.withValues(
+                                                          alpha: 0.14,
+                                                        ),
+                                                  width: 0.7,
+                                                ),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: <Widget>[
+                                                  Icon(
+                                                    isReminded
+                                                        ? Icons
+                                                            .notifications_active_rounded
+                                                        : Icons
+                                                            .notifications_none_rounded,
+                                                    size: 15,
+                                                    color: isReminded
+                                                        ? LiveLuxuryPalette
+                                                            .warmNowStreaming
+                                                        : Colors.white
+                                                            .withValues(
+                                                            alpha: 0.85,
+                                                          ),
+                                                  ),
+                                                  const SizedBox(width: 5),
+                                                  Text(
+                                                    isReminded
+                                                        ? (ar
+                                                            ? 'مفعّل'
+                                                            : 'Reminded')
+                                                        : (ar
+                                                            ? 'ذكّرني'
+                                                            : 'Remind'),
+                                                    style:
+                                                        LiveBroadcastType.style(
+                                                      context,
+                                                      size: 11,
+                                                      weight: FontWeight.w600,
+                                                      color: isReminded
+                                                          ? LiveLuxuryPalette
+                                                              .warmNowStreaming
+                                                          : Colors.white
+                                                              .withValues(
+                                                              alpha: 0.85,
+                                                            ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 9),
+                                  Text(
+                                    slot.title(ar),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: LiveBroadcastType.style(
+                                      context,
+                                      size: 14,
+                                      weight: FontWeight.w700,
+                                      color: Colors.white,
+                                      height: 1.25,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    slot.description(ar),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: LiveBroadcastType.style(
+                                      context,
+                                      size: 12,
+                                      weight: FontWeight.w400,
+                                      color: LiveLuxuryPalette.cinemaSilver,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                  if (isLive) ...<Widget>[
+                                    const SizedBox(height: 10),
+                                    ClipRRect(
+                                      borderRadius: const BorderRadius.all(
+                                        Radius.circular(3),
+                                      ),
+                                      child: Container(
+                                        height: 3,
+                                        width: double.infinity,
+                                        color:
+                                            Colors.white.withValues(alpha: 0.14),
+                                        alignment:
+                                            AlignmentDirectional.centerStart,
+                                        child: FractionallySizedBox(
+                                          widthFactor:
+                                              slot.progressAt(effectiveNow),
+                                          child: Container(
+                                            color: LiveLuxuryPalette
+                                                .crimsonActiveRim,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+//  4. EqualizerBars, AnimatedStudioCanvas, FloatingUnmutePill & QualityPickerSheet
+// ─────────────────────────────────────────────────────────────────────────────
 class EqualizerBars extends StatelessWidget {
   final Animation<double> animation;
   final bool isActive;
   final Color color;
   final double height;
   final double barWidth;
-
   const EqualizerBars({
     super.key,
     required this.animation,
@@ -1539,7 +2313,6 @@ class EqualizerBars extends StatelessWidget {
     this.height = 12,
     this.barWidth = 2.0,
   });
-
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -1548,7 +2321,6 @@ class EqualizerBars extends StatelessWidget {
         final double t = animation.value * 2 * math.pi;
         const List<double> phases = <double>[0.0, 1.3, 2.5, 3.8];
         const List<double> speeds = <double>[1.0, 2.0, 1.5, 2.5];
-
         return SizedBox(
           height: height,
           child: Row(
@@ -1556,7 +2328,8 @@ class EqualizerBars extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: List<Widget>.generate(4, (int i) {
               final double factor = isActive
-                  ? (0.26 + 0.74 * ((math.sin(t * speeds[i] + phases[i]) + 1.0) * 0.5))
+                  ? (0.26 +
+                      0.74 * ((math.sin(t * speeds[i] + phases[i]) + 1.0) * 0.5))
                   : 0.24;
               return Container(
                 width: barWidth,
@@ -1574,31 +2347,23 @@ class EqualizerBars extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  3. AnimatedStudioCanvas & FloatingUnmutePill — Velvet Cinema Stage Layers
-// ─────────────────────────────────────────────────────────────────────────────
-
 class AnimatedStudioCanvas extends StatelessWidget {
   final Animation<double> animation;
   final LiveChannel channel;
   final bool isLoading;
   final bool hasError;
   final VoidCallback onRetry;
-
   const AnimatedStudioCanvas({
     super.key,
-    required this.animation,
     required this.channel,
-    required this.isLoading,
-    required this.hasError,
+    required this.animation,
+    this.isLoading = false,
+    this.hasError = false,
     required this.onRetry,
   });
-
   @override
   Widget build(BuildContext context) {
     final bool ar = LiveBroadcastType.isAr(context);
-
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
@@ -1625,21 +2390,18 @@ class AnimatedStudioCanvas extends StatelessWidget {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 20),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 26,
+                        vertical: 20,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xD60C0C10),
-                        borderRadius: const BorderRadius.all(Radius.circular(20)),
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(20)),
                         border: Border.all(
                           color: LiveLuxuryPalette.hairlineMedium,
                           width: 0.6,
                         ),
-                        boxShadow: const <BoxShadow>[
-                          BoxShadow(
-                            color: Color(0x73000000),
-                            blurRadius: 24,
-                            offset: Offset(0, 10),
-                          ),
-                        ],
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -1649,32 +2411,23 @@ class AnimatedStudioCanvas extends StatelessWidget {
                             children: <Widget>[
                               if (!hasError)
                                 SizedBox(
-                                  width: 72,
-                                  height: 72,
+                                  width: 68,
+                                  height: 68,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 1.6,
-                                    color: Colors.white.withValues(alpha: 0.72),
-                                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                                    strokeWidth: 1.8,
+                                    color: LiveLuxuryPalette.crimsonActiveRim,
+                                    backgroundColor:
+                                        Colors.white.withValues(alpha: 0.10),
                                   ),
                                 ),
                               NetworkEmblem(
                                 channel: channel,
-                                size: 52,
-                                borderRadius: 13,
+                                size: 48,
+                                borderRadius: 12,
                               ),
                             ],
                           ),
-                          const SizedBox(height: 14),
-                          Text(
-                            channel.name(ar),
-                            style: LiveBroadcastType.style(
-                              context,
-                              size: 14.5,
-                              weight: FontWeight.w700,
-                              display: true,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
+                          const SizedBox(height: 12),
                           Text(
                             hasError
                                 ? (ar
@@ -1685,20 +2438,24 @@ class AnimatedStudioCanvas extends StatelessWidget {
                                     : 'Preparing live broadcast...'),
                             style: LiveBroadcastType.style(
                               context,
-                              size: 12,
-                              weight: FontWeight.w400,
-                              color: LiveLuxuryPalette.silverSecondary,
+                              size: 12.5,
+                              weight: FontWeight.w500,
+                              color: LiveLuxuryPalette.cinemaSilver,
                             ),
                           ),
                           if (hasError) ...<Widget>[
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
                             OutlinedButton.icon(
                               onPressed: onRetry,
                               style: OutlinedButton.styleFrom(
-                                backgroundColor: Colors.white.withValues(alpha: 0.08),
+                                backgroundColor:
+                                    Colors.white.withValues(alpha: 0.08),
                                 foregroundColor: Colors.white,
                                 minimumSize: const Size(0, 38),
-                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 9,
+                                ),
                                 side: const BorderSide(
                                   color: LiveLuxuryPalette.hairlineMedium,
                                   width: 0.7,
@@ -1728,18 +2485,15 @@ class AnimatedStudioCanvas extends StatelessWidget {
     );
   }
 }
-
 class _StudioBackdropPainter extends CustomPainter {
   final double progress;
   final Color primary;
   final Color secondary;
-
   const _StudioBackdropPainter({
     required this.progress,
     required this.primary,
     required this.secondary,
   });
-
   @override
   void paint(Canvas canvas, Size size) {
     final Rect full = Offset.zero & size;
@@ -1748,13 +2502,12 @@ class _StudioBackdropPainter extends CustomPainter {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: <Color>[
-          Color.lerp(const Color(0xFF0A0A0F), secondary, 0.18)!,
+          Color.lerp(const Color(0xFF0A0A0F), secondary, 0.22)!,
           const Color(0xFF07070A),
           LiveLuxuryPalette.obsidianCanvas,
         ],
       ).createShader(full);
     canvas.drawRect(full, basePaint);
-
     final double angle = progress * 2 * math.pi;
     final Offset orb1 = Offset(
       size.width * (0.30 + 0.12 * math.cos(angle)),
@@ -1764,7 +2517,6 @@ class _StudioBackdropPainter extends CustomPainter {
       size.width * (0.72 + 0.10 * math.sin(angle)),
       size.height * (0.66 + 0.12 * math.cos(angle)),
     );
-
     final double r1 = size.shortestSide * 0.66;
     canvas.drawCircle(
       orb1,
@@ -1772,12 +2524,11 @@ class _StudioBackdropPainter extends CustomPainter {
       Paint()
         ..shader = RadialGradient(
           colors: <Color>[
-            primary.withValues(alpha: 0.15),
+            primary.withValues(alpha: 0.18),
             primary.withValues(alpha: 0.0),
           ],
         ).createShader(Rect.fromCircle(center: orb1, radius: r1)),
     );
-
     final double r2 = size.shortestSide * 0.54;
     canvas.drawCircle(
       orb2,
@@ -1785,22 +2536,12 @@ class _StudioBackdropPainter extends CustomPainter {
       Paint()
         ..shader = RadialGradient(
           colors: <Color>[
-            secondary.withValues(alpha: 0.12),
+            secondary.withValues(alpha: 0.14),
             secondary.withValues(alpha: 0.0),
           ],
         ).createShader(Rect.fromCircle(center: orb2, radius: r2)),
     );
-
-    final Paint ringPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.6
-      ..color = Colors.white.withValues(alpha: 0.025);
-    final Offset center = Offset(size.width * 0.5, size.height * 0.5);
-    for (int i = 1; i <= 3; i++) {
-      canvas.drawCircle(center, size.shortestSide * (0.18 * i), ringPaint);
-    }
   }
-
   @override
   bool shouldRepaint(covariant _StudioBackdropPainter oldDelegate) {
     return oldDelegate.progress != progress ||
@@ -1808,21 +2549,17 @@ class _StudioBackdropPainter extends CustomPainter {
         oldDelegate.secondary != secondary;
   }
 }
-
 class FloatingUnmutePill extends StatelessWidget {
   final Animation<double> pulseAnimation;
   final VoidCallback onTap;
-
   const FloatingUnmutePill({
     super.key,
     required this.pulseAnimation,
     required this.onTap,
   });
-
   @override
   Widget build(BuildContext context) {
     final bool ar = LiveBroadcastType.isAr(context);
-
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -1830,26 +2567,27 @@ class FloatingUnmutePill extends StatelessWidget {
         child: AnimatedBuilder(
           animation: pulseAnimation,
           builder: (BuildContext context, Widget? child) {
-            final double rimAlpha = 0.13 + 0.07 * pulseAnimation.value;
+            final double rimAlpha = 0.14 + 0.08 * pulseAnimation.value;
             return ClipRRect(
               borderRadius: const BorderRadius.all(Radius.circular(999)),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     color: const Color(0xD90E0E12),
                     borderRadius: const BorderRadius.all(Radius.circular(999)),
                     border: Border.all(
-                        color: Colors.white.withValues(alpha: rimAlpha),
-                        width: 0.6,
+                      color: Colors.white.withValues(alpha: rimAlpha),
+                      width: 0.7,
                     ),
                     boxShadow: const <BoxShadow>[
-                        BoxShadow(
-                          color: Color(0x66000000),
-                          blurRadius: 16,
-                          offset: Offset(0, 6),
-                        ),
+                      BoxShadow(
+                        color: Color(0x66000000),
+                        blurRadius: 16,
+                        offset: Offset(0, 6),
+                      ),
                     ],
                   ),
                   child: child,
@@ -1882,1116 +2620,19 @@ class FloatingUnmutePill extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  4. LiveMatchScorebugCard & CompactMatchRibbon — Apple TV+ Sports Restraint
-// ─────────────────────────────────────────────────────────────────────────────
-
-class LiveMatchScorebugCard extends StatelessWidget {
-  final LiveMatchInfo match;
-  final Animation<double> pulseAnimation;
-
-  const LiveMatchScorebugCard({
-    super.key,
-    required this.match,
-    required this.pulseAnimation,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool ar = LiveBroadcastType.isAr(context);
-    final int awayPossession = 100 - match.homePossession;
-    final String cleanEvents =
-        match.events(ar).replaceAll('⚽ ', '').replaceAll('⚽', '').trim();
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: LiveLuxuryPalette.obsidianCard,
-        borderRadius: const BorderRadius.all(Radius.circular(16)),
-        border: Border.all(
-          color: LiveLuxuryPalette.hairlineSubtle,
-          width: 0.5,
-        ),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(
-            color: Color(0x4D000000),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  '${match.competition(ar)}  •  ${match.stage(ar)}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LiveBroadcastType.style(
-                    context,
-                    size: 12,
-                    weight: FontWeight.w500,
-                    color: LiveLuxuryPalette.silverSecondary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              AnimatedBuilder(
-                animation: pulseAnimation,
-                builder: (BuildContext context, _) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                        color: LiveLuxuryPalette.mutedPill,
-                        borderRadius: const BorderRadius.all(Radius.circular(999)),
-                        border: Border.all(
-                          color: LiveLuxuryPalette.hairlineSubtle,
-                          width: 0.5,
-                        ),
-                    ),
-                    child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: LiveLuxuryPalette.rubyLive.withValues(
-                                  alpha: 0.55 + 0.45 * pulseAnimation.value,
-                                ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            match.minuteLabel,
-                            style: LiveBroadcastType.style(
-                              context,
-                              size: 11.5,
-                              weight: FontWeight.w700,
-                              color: Colors.white,
-                              tabular: true,
-                            ),
-                          ),
-                        ],
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Row(
-                  children: <Widget>[
-                    _ClubShieldBadge(
-                      code: match.homeShort,
-                      color: match.homeColor,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        match.homeTeam(ar),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LiveBroadcastType.style(
-                          context,
-                          size: 14,
-                          weight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      '${match.homeScore}',
-                      style: LiveBroadcastType.style(
-                        context,
-                        size: 25,
-                        weight: FontWeight.w800,
-                        color: Colors.white,
-                        display: true,
-                        tabular: true,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 9),
-                      child: Text(
-                        '–',
-                        style: LiveBroadcastType.style(
-                          context,
-                          size: 20,
-                          weight: FontWeight.w400,
-                          color: const Color(0xFF5E5E68),
-                          display: true,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      '${match.awayScore}',
-                      style: LiveBroadcastType.style(
-                        context,
-                        size: 25,
-                        weight: FontWeight.w800,
-                        color: Colors.white,
-                        display: true,
-                        tabular: true,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        match.awayTeam(ar),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.end,
-                        style: LiveBroadcastType.style(
-                          context,
-                          size: 14,
-                          weight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    _ClubShieldBadge(
-                      code: match.awayShort,
-                      color: match.awayColor,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            height: 0.5,
-            color: LiveLuxuryPalette.hairlineSubtle,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                '${match.homePossession}%',
-                style: LiveBroadcastType.style(
-                  context,
-                  size: 11.5,
-                  weight: FontWeight.w600,
-                  color: const Color(0xFFE2E2EC),
-                  tabular: true,
-                ),
-              ),
-              Flexible(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    ar
-                        ? 'الاستحواذ  •  التسديدات على المرمى (${match.homeShotsOnTarget}–${match.awayShotsOnTarget})'
-                        : 'Possession  •  Shots on Target (${match.homeShotsOnTarget}–${match.awayShotsOnTarget})',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: LiveBroadcastType.style(
-                        context,
-                        size: 11,
-                        weight: FontWeight.w500,
-                        color: LiveLuxuryPalette.silverMuted,
-                        tabular: true,
-                    ),
-                  ),
-                ),
-              ),
-              Text(
-                '$awayPossession%',
-                style: LiveBroadcastType.style(
-                  context,
-                  size: 11.5,
-                  weight: FontWeight.w600,
-                  color: const Color(0xFFE2E2EC),
-                  tabular: true,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 7),
-          ClipRRect(
-            borderRadius: const BorderRadius.all(Radius.circular(2)),
-            child: SizedBox(
-              height: 2.5,
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    flex: match.homePossession,
-                    child: Container(
-                        color: Color.lerp(const Color(0xFFD4D4DF), match.homeColor, 0.20),
-                    ),
-                  ),
-                  const SizedBox(width: 3),
-                  Expanded(
-                    flex: awayPossession,
-                    child: Container(
-                        color: Color.lerp(const Color(0xFF52525E), match.awayColor, 0.20),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (cleanEvents.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 10),
-            Text(
-              cleanEvents,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: LiveBroadcastType.style(
-                context,
-                size: 11,
-                weight: FontWeight.w400,
-                color: LiveLuxuryPalette.silverSecondary,
-                tabular: true,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _ClubShieldBadge extends StatelessWidget {
-  final String code;
-  final Color color;
-
-  const _ClubShieldBadge({
-    required this.code,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 34,
-      height: 34,
-      decoration: BoxDecoration(
-        color: Color.lerp(const Color(0xFF16161D), color, 0.20),
-        borderRadius: const BorderRadius.all(Radius.circular(9)),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.10),
-          width: 0.6,
-        ),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        code,
-        style: GoogleFonts.outfit(
-          color: const Color(0xFFF2F2F7),
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.45,
-        ),
-      ),
-    );
-  }
-}
-
-class CompactMatchRibbon extends StatelessWidget {
-  final LiveMatchInfo match;
-  final Animation<double> pulseAnimation;
-  final VoidCallback onTap;
-
-  const CompactMatchRibbon({
-    super.key,
-    required this.match,
-    required this.pulseAnimation,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool ar = LiveBroadcastType.isAr(context);
-
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(14, 8, 14, 2),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: const BorderRadius.all(Radius.circular(12)),
-          child: Container(
-            height: 38,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: LiveLuxuryPalette.obsidianCard,
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
-              border: Border.all(
-                color: LiveLuxuryPalette.hairlineSubtle,
-                width: 0.5,
-              ),
-            ),
-            child: Row(
-              children: <Widget>[
-                AnimatedBuilder(
-                  animation: pulseAnimation,
-                  builder: (BuildContext context, _) {
-                    return Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: LiveLuxuryPalette.rubyLive.withValues(
-                          alpha: 0.55 + 0.45 * pulseAnimation.value,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Text.rich(
-                    TextSpan(
-                      children: <InlineSpan>[
-                        TextSpan(
-                          text: '${match.competition(ar)}  •  ',
-                          style: LiveBroadcastType.style(
-                            context,
-                            size: 11.5,
-                            weight: FontWeight.w500,
-                            color: LiveLuxuryPalette.silverSecondary,
-                          ),
-                        ),
-                        TextSpan(
-                          text: '${match.homeTeam(ar)}  ${match.homeScore} – ${match.awayScore}  ${match.awayTeam(ar)}',
-                          style: LiveBroadcastType.style(
-                            context,
-                            size: 12,
-                            weight: FontWeight.w700,
-                            color: Colors.white,
-                            tabular: true,
-                          ),
-                        ),
-                      ],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: const BoxDecoration(
-                    color: LiveLuxuryPalette.mutedPill,
-                    borderRadius: BorderRadius.all(Radius.circular(999)),
-                  ),
-                  child: Text(
-                    match.minuteLabel,
-                    style: LiveBroadcastType.style(
-                        context,
-                        size: 11,
-                        weight: FontWeight.w700,
-                        color: const Color(0xFFECECF2),
-                        tabular: true,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  ar ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
-                  size: 15,
-                  color: LiveLuxuryPalette.silverMuted,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  5. ActiveProgramCard & BroadcastScheduleStrip — Apple TV+ Editorial Detail
-// ─────────────────────────────────────────────────────────────────────────────
-
-class ActiveProgramCard extends StatelessWidget {
-  final LiveChannel channel;
-  final EpgSlot currentSlot;
-  final EpgSlot nextSlot;
-  final DateTime now;
-  final bool isFavorite;
-  final VoidCallback onToggleFavorite;
-  final VoidCallback? onPrevChannel;
-  final VoidCallback? onNextChannel;
-
-  const ActiveProgramCard({
-    super.key,
-    required this.channel,
-    required this.currentSlot,
-    required this.nextSlot,
-    required this.now,
-    required this.isFavorite,
-    required this.onToggleFavorite,
-    this.onPrevChannel,
-    this.onNextChannel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool ar = LiveBroadcastType.isAr(context);
-    final AppLocalizations? l10n =
-        Localizations.of<AppLocalizations>(context, AppLocalizations);
-    final int remaining = currentSlot.remainingMinutesAt(now);
-
-    final TextStyle metaStyle = LiveBroadcastType.style(
-      context,
-      size: 12,
-      weight: FontWeight.w500,
-      color: LiveLuxuryPalette.silverSecondary,
-      letterSpacing: 0.3,
-      tabular: true,
-    );
-    final TextStyle dotStyle = LiveBroadcastType.style(
-      context,
-      size: 12,
-      weight: FontWeight.w500,
-      color: LiveLuxuryPalette.silverMuted,
-    );
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: LiveLuxuryPalette.obsidianCard,
-        borderRadius: const BorderRadius.all(Radius.circular(16)),
-        border: Border.all(
-          color: LiveLuxuryPalette.hairlineSubtle,
-          width: 0.6,
-        ),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(
-            color: Color(0x45000000),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text.rich(
-                  TextSpan(
-                    children: <InlineSpan>[
-                      TextSpan(
-                        text: 'CH ${channel.number}',
-                        style: metaStyle.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      TextSpan(text: '  •  ', style: dotStyle),
-                      TextSpan(
-                        text: channel.qualityTag,
-                        style: metaStyle.copyWith(
-                          color: LiveLuxuryPalette.champagneSoft,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      TextSpan(text: '  •  ', style: dotStyle),
-                      TextSpan(text: channel.audioTag(ar), style: metaStyle),
-                      TextSpan(text: '  •  ', style: dotStyle),
-                      TextSpan(
-                        text: channel.category.label(context, l10n),
-                        style: metaStyle,
-                      ),
-                    ],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Tooltip(
-                message: ar ? 'المفضلة' : 'Favorite',
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: onToggleFavorite,
-                    borderRadius: const BorderRadius.all(Radius.circular(17)),
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: isFavorite
-                            ? LiveLuxuryPalette.rubyLive.withValues(alpha: 0.14)
-                            : LiveLuxuryPalette.salonTile,
-                        borderRadius: const BorderRadius.all(Radius.circular(17)),
-                        border: Border.all(
-                          color: isFavorite
-                              ? LiveLuxuryPalette.rubyLive.withValues(alpha: 0.35)
-                              : LiveLuxuryPalette.hairlineSubtle,
-                          width: 0.6,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Icon(
-                        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        size: 16,
-                        color: isFavorite
-                            ? LiveLuxuryPalette.rubyLive
-                            : LiveLuxuryPalette.silverSecondary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            currentSlot.title(ar),
-            style: LiveBroadcastType.style(
-              context,
-              size: 19,
-              weight: FontWeight.w800,
-              color: Colors.white,
-              height: 1.25,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            currentSlot.description(ar),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: LiveBroadcastType.style(
-              context,
-              size: 13,
-              weight: FontWeight.w400,
-              color: const Color(0xFF9A9AA6),
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            height: 0.5,
-            color: LiveLuxuryPalette.hairlineSubtle,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text.rich(
-                  TextSpan(
-                    children: <InlineSpan>[
-                      TextSpan(
-                        text: ar ? 'التالي: ' : 'Up Next: ',
-                        style: LiveBroadcastType.style(
-                          context,
-                          size: 11.5,
-                          weight: FontWeight.w500,
-                          color: LiveLuxuryPalette.silverMuted,
-                        ),
-                      ),
-                      TextSpan(
-                        text: nextSlot.title(ar),
-                        style: LiveBroadcastType.style(
-                          context,
-                          size: 12,
-                          weight: FontWeight.w600,
-                          color: const Color(0xFFE2E2EC),
-                        ),
-                      ),
-                      TextSpan(
-                        text: '  •  ${EpgSlot.formatClock(nextSlot.startTime)}',
-                        style: LiveBroadcastType.style(
-                          context,
-                          size: 11.5,
-                          weight: FontWeight.w500,
-                          color: LiveLuxuryPalette.silverMuted,
-                          tabular: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                ar ? 'متبقي $remaining د' : '${remaining}m left',
-                style: LiveBroadcastType.style(
-                  context,
-                  size: 11.5,
-                  weight: FontWeight.w500,
-                  color: LiveLuxuryPalette.silverSecondary,
-                  tabular: true,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class BroadcastScheduleStrip extends StatelessWidget {
-  final LiveChannel channel;
-  final List<EpgSlot> slots;
-  final DateTime now;
-  final Set<String> remindedSlotIds;
-  final ValueChanged<EpgSlot> onToggleReminder;
-
-  const BroadcastScheduleStrip({
-    super.key,
-    required this.channel,
-    required this.slots,
-    required this.now,
-    required this.remindedSlotIds,
-    required this.onToggleReminder,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool ar = LiveBroadcastType.isAr(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            Text(
-              ar ? 'دليل البث الزمني' : 'Broadcast Schedule',
-              style: LiveBroadcastType.style(
-                context,
-                size: 14.5,
-                weight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              ar ? 'توقيت مباشر' : 'Live Timeline',
-              style: LiveBroadcastType.style(
-                context,
-                size: 11.5,
-                weight: FontWeight.w500,
-                color: LiveLuxuryPalette.silverMuted,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        SizedBox(
-          height: 108,
-          child: ShaderMask(
-            shaderCallback: (Rect bounds) {
-              return LinearGradient(
-                begin: ar ? Alignment.centerRight : Alignment.centerLeft,
-                end: ar ? Alignment.centerLeft : Alignment.centerRight,
-                stops: const <double>[0.0, 0.93, 1.0],
-                colors: const <Color>[
-                  Colors.white,
-                  Colors.white,
-                  Colors.transparent,
-                ],
-              ).createShader(bounds);
-            },
-            blendMode: BlendMode.dstIn,
-            child: ScrollConfiguration(
-              behavior: ScrollConfiguration.of(context).copyWith(
-                dragDevices: const <PointerDeviceKind>{
-                  PointerDeviceKind.touch,
-                  PointerDeviceKind.mouse,
-                  PointerDeviceKind.trackpad,
-                },
-              ),
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsetsDirectional.only(end: 18),
-                itemCount: slots.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (BuildContext context, int index) {
-                  final EpgSlot slot = slots[index];
-                  final bool isReminded = remindedSlotIds.contains(slot.id);
-                  final String statusLabel = index == 0
-                      ? (ar ? 'يُبث الآن' : 'ON AIR')
-                      : index == 1
-                          ? (ar ? 'التالي' : 'UP NEXT')
-                          : (ar ? 'لاحقاً' : 'LATER');
-
-                  return Container(
-                    width: 228,
-                    padding: const EdgeInsets.all(13),
-                    decoration: BoxDecoration(
-                        color: slot.isLive ? const Color(0xFF16161C) : LiveLuxuryPalette.obsidianCard,
-                        borderRadius: const BorderRadius.all(Radius.circular(14)),
-                        border: Border.all(
-                          color: slot.isLive
-                              ? LiveLuxuryPalette.hairlineMedium
-                              : LiveLuxuryPalette.hairlineSubtle,
-                          width: slot.isLive ? 0.7 : 0.5,
-                        ),
-                    ),
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Row(
-                            children: <Widget>[
-                              if (slot.isLive) ...<Widget>[
-                                Container(
-                                  width: 5.5,
-                                  height: 5.5,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: LiveLuxuryPalette.rubyLive,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                              ],
-                              Text(
-                                statusLabel,
-                                style: LiveBroadcastType.style(
-                                  context,
-                                  size: 10.5,
-                                  weight: slot.isLive ? FontWeight.w700 : FontWeight.w600,
-                                  color: slot.isLive ? Colors.white : LiveLuxuryPalette.silverMuted,
-                                ),
-                              ),
-                              Text(
-                                '  •  ',
-                                style: LiveBroadcastType.style(
-                                  context,
-                                  size: 10.5,
-                                  weight: FontWeight.w500,
-                                  color: LiveLuxuryPalette.silverMuted,
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  slot.timeRangeLabel,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: LiveBroadcastType.style(
-                                    context,
-                                    size: 11,
-                                    weight: FontWeight.w500,
-                                    color: LiveLuxuryPalette.silverSecondary,
-                                    tabular: true,
-                                  ),
-                                ),
-                              ),
-                              if (!slot.isLive)
-                                InkWell(
-                                  onTap: () => onToggleReminder(slot),
-                                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(2),
-                                    child: Icon(
-                                      isReminded
-                                          ? Icons.notifications_active_rounded
-                                          : Icons.notifications_none_rounded,
-                                      size: 16,
-                                      color: isReminded
-                                          ? LiveLuxuryPalette.champagneSoft
-                                          : LiveLuxuryPalette.silverMuted,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            slot.title(ar),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: LiveBroadcastType.style(
-                                context,
-                                size: 12.5,
-                                weight: FontWeight.w700,
-                                color: const Color(0xFFF2F2F7),
-                                height: 1.28,
-                            ),
-                          ),
-                          const Spacer(),
-                          if (slot.isLive)
-                            ClipRRect(
-                              borderRadius: const BorderRadius.all(Radius.circular(2)),
-                              child: Container(
-                                height: 2.0,
-                                width: double.infinity,
-                                color: LiveLuxuryPalette.hairlineSubtle,
-                                alignment: AlignmentDirectional.centerStart,
-                                child: FractionallySizedBox(
-                                  widthFactor: slot.progressAt(now),
-                                  child: Container(
-                                    color: Colors.white.withValues(alpha: 0.38),
-                                  ),
-                                ),
-                              ),
-                            )
-                          else
-                            Text(
-                              slot.description(ar),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: LiveBroadcastType.style(
-                                context,
-                                size: 10.5,
-                                weight: FontWeight.w400,
-                                color: LiveLuxuryPalette.silverMuted,
-                              ),
-                            ),
-                        ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  6. EpgChannelTile — Two-Line Salon Restraint with Hairline Progress
-// ─────────────────────────────────────────────────────────────────────────────
-
-class EpgChannelTile extends StatelessWidget {
-  final LiveChannel channel;
-  final DateTime now;
-  final bool isSelected;
-  final bool isPlayingAudio;
-  final bool isFavorite;
-  final Animation<double> equalizerAnim;
-  final VoidCallback onTap;
-  final VoidCallback onToggleFavorite;
-
-  const EpgChannelTile({
-    super.key,
-    required this.channel,
-    required this.now,
-    required this.isSelected,
-    required this.isPlayingAudio,
-    required this.isFavorite,
-    required this.equalizerAnim,
-    required this.onTap,
-    required this.onToggleFavorite,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool ar = LiveBroadcastType.isAr(context);
-    final EpgSlot current = channel.buildSchedule(now).first;
-    final double progress = current.progressAt(now);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: const BorderRadius.all(Radius.circular(14)),
-        child: AnimatedContainer(
-          duration: AppDurations.normal,
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsetsDirectional.fromSTEB(12, 11, 10, 10),
-          decoration: BoxDecoration(
-            color: isSelected
-              ? LiveLuxuryPalette.salonTileActive
-              : LiveLuxuryPalette.salonTile,
-            borderRadius: const BorderRadius.all(Radius.circular(14)),
-            border: Border.all(
-                color: isSelected
-                  ? LiveLuxuryPalette.hairlineMedium
-                  : LiveLuxuryPalette.hairlineSubtle,
-                width: isSelected ? 0.8 : 0.5,
-            ),
-          ),
-          child: Row(
-            children: <Widget>[
-              AnimatedContainer(
-                duration: AppDurations.normal,
-                curve: Curves.easeOutCubic,
-                width: isSelected ? 3.0 : 0.0,
-                height: isSelected ? 24.0 : 0.0,
-                margin: EdgeInsetsDirectional.only(end: isSelected ? 8.0 : 0.0),
-                decoration: const BoxDecoration(
-                  color: LiveLuxuryPalette.rubyLive,
-                  borderRadius: BorderRadius.all(Radius.circular(2)),
-                ),
-              ),
-              SizedBox(
-                width: 22,
-                child: Text(
-                  channel.number,
-                  style: LiveBroadcastType.style(
-                    context,
-                    size: 11.5,
-                    weight: FontWeight.w600,
-                    color: isSelected
-                        ? const Color(0xFFC8C8D2)
-                        : LiveLuxuryPalette.silverMuted,
-                    tabular: true,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              NetworkEmblem(channel: channel, size: 42, borderRadius: 11),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(
-                            channel.name(ar),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: LiveBroadcastType.style(
-                                context,
-                                size: 13.5,
-                                weight: FontWeight.w700,
-                                color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        if (channel.liveMatch != null) ...<Widget>[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                                color: LiveLuxuryPalette.mutedPill,
-                                borderRadius: const BorderRadius.all(Radius.circular(6)),
-                                border: Border.all(
-                                  color: LiveLuxuryPalette.hairlineSubtle,
-                                  width: 0.5,
-                                ),
-                            ),
-                            child: Text(
-                                '${channel.liveMatch!.homeScore} - ${channel.liveMatch!.awayScore}',
-                                style: LiveBroadcastType.style(
-                                  context,
-                                  size: 11,
-                                  weight: FontWeight.w700,
-                                  color: const Color(0xFFECECF2),
-                                  tabular: true,
-                                ),
-                            ),
-                          ),
-                        ],
-                        if (isSelected && isPlayingAudio) ...<Widget>[
-                          const SizedBox(width: 7),
-                          EqualizerBars(
-                            animation: equalizerAnim,
-                            isActive: true,
-                            color: LiveLuxuryPalette.rubyLive,
-                            height: 10,
-                            barWidth: 1.8,
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                        current.title(ar),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LiveBroadcastType.style(
-                          context,
-                          size: 12,
-                          weight: FontWeight.w400,
-                          color: isSelected
-                              ? const Color(0xFFC4C4CE)
-                              : LiveLuxuryPalette.silverSecondary,
-                        ),
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                        borderRadius: const BorderRadius.all(Radius.circular(2)),
-                        child: Container(
-                          height: 2.0,
-                          width: double.infinity,
-                          color: LiveLuxuryPalette.hairlineSubtle,
-                          alignment: AlignmentDirectional.centerStart,
-                          child: FractionallySizedBox(
-                            widthFactor: progress,
-                            child: Container(
-                                color: isSelected
-                                    ? LiveLuxuryPalette.rubyLive
-                                    : const Color(0x73FFFFFF),
-                            ),
-                          ),
-                        ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 6),
-              SizedBox(
-                width: 32,
-                height: 32,
-                child: IconButton(
-                  onPressed: onToggleFavorite,
-                  padding: EdgeInsets.zero,
-                  splashRadius: 18,
-                  tooltip: ar ? 'المفضلة' : 'Favorite',
-                  icon: Icon(
-                    isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    size: 15.5,
-                    color: isFavorite ? LiveLuxuryPalette.rubyLive : const Color(0x47FFFFFF),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  7. QualityPickerSheet — Smoked Obsidian Stream Resolution Selector
-// ─────────────────────────────────────────────────────────────────────────────
-
 class QualityPickerSheet extends StatelessWidget {
   final String selectedQuality;
   final ValueChanged<String> onSelect;
-
   const QualityPickerSheet({
     super.key,
     required this.selectedQuality,
     required this.onSelect,
   });
-
   @override
   Widget build(BuildContext context) {
     final bool ar = LiveBroadcastType.isAr(context);
     final AppLocalizations? l10n =
         Localizations.of<AppLocalizations>(context, AppLocalizations);
-
     final List<({String id, String title, String sub, String badge})> options =
         <({String id, String title, String sub, String badge})>[
       (
@@ -3021,7 +2662,6 @@ class QualityPickerSheet extends StatelessWidget {
         badge: 'HD',
       ),
     ];
-
     return Container(
       decoration: BoxDecoration(
         color: LiveLuxuryPalette.smokedPanel,
@@ -3060,22 +2700,23 @@ class QualityPickerSheet extends StatelessWidget {
                   const SizedBox(width: 9),
                   Expanded(
                     child: Text(
-                        l10n?.playerQuality ?? (ar ? 'جودة البث المباشر' : 'Stream Quality'),
-                        style: LiveBroadcastType.style(
-                          context,
-                          size: 16.5,
-                          weight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                      l10n?.playerQuality ??
+                          (ar ? 'جودة البث المباشر' : 'Stream Quality'),
+                      style: LiveBroadcastType.style(
+                        context,
+                        size: 16.5,
+                        weight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(
-                        Icons.close_rounded,
-                        size: 20,
-                        color: LiveLuxuryPalette.silverMuted,
+                      Icons.close_rounded,
+                      size: 20,
+                      color: LiveLuxuryPalette.silverMuted,
                     ),
                   ),
                 ],
@@ -3087,97 +2728,103 @@ class QualityPickerSheet extends StatelessWidget {
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                        onTap: () {
-                          onSelect(opt.id);
-                          Navigator.of(context).pop();
-                        },
-                        borderRadius: const BorderRadius.all(Radius.circular(14)),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
+                      onTap: () {
+                        onSelect(opt.id);
+                        Navigator.of(context).pop();
+                      },
+                      borderRadius: const BorderRadius.all(Radius.circular(14)),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: selectedQuality == opt.id
+                              ? LiveLuxuryPalette.salonTileActive
+                              : LiveLuxuryPalette.obsidianCard,
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(14)),
+                          border: Border.all(
                             color: selectedQuality == opt.id
-                                ? LiveLuxuryPalette.salonTileActive
-                                : LiveLuxuryPalette.obsidianCard,
-                            borderRadius: const BorderRadius.all(Radius.circular(14)),
-                            border: Border.all(
-                                color: selectedQuality == opt.id
-                                    ? LiveLuxuryPalette.hairlineMedium
-                                    : LiveLuxuryPalette.hairlineSubtle,
-                                width: selectedQuality == opt.id ? 0.8 : 0.5,
-                            ),
-                          ),
-                          child: Row(
-                            children: <Widget>[
-                              Container(
-                                width: 48,
-                                padding: const EdgeInsets.symmetric(vertical: 5),
-                                decoration: BoxDecoration(
-                                    color: LiveLuxuryPalette.mutedPill,
-                                    borderRadius: const BorderRadius.all(Radius.circular(8)),
-                                    border: Border.all(
-                                        color: LiveLuxuryPalette.hairlineSubtle,
-                                        width: 0.5,
-                                    ),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                    opt.badge,
-                                    style: GoogleFonts.outfit(
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.4,
-                                        color: opt.id == '4K HDR'
-                                            ? LiveLuxuryPalette.champagneSoft
-                                            : const Color(0xFFD0D0DA),
-                                    ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: <Widget>[
-                                      Text(
-                                        opt.title,
-                                        style: LiveBroadcastType.style(
-                                          context,
-                                          size: 13.5,
-                                          weight: FontWeight.w700,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        opt.sub,
-                                        style: LiveBroadcastType.style(
-                                          context,
-                                          size: 11.5,
-                                          weight: FontWeight.w400,
-                                          color: LiveLuxuryPalette.silverSecondary,
-                                          tabular: true,
-                                        ),
-                                      ),
-                                    ],
-                                ),
-                              ),
-                              if (selectedQuality == opt.id)
-                                Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: LiveLuxuryPalette.rubyLive,
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: const Icon(
-                                    Icons.check_rounded,
-                                    color: Colors.white,
-                                    size: 13,
-                                  ),
-                                ),
-                            ],
+                                ? LiveLuxuryPalette.crimsonActiveRim
+                                    .withValues(alpha: 0.55)
+                                : LiveLuxuryPalette.hairlineSubtle,
+                            width: selectedQuality == opt.id ? 1.0 : 0.5,
                           ),
                         ),
+                        child: Row(
+                          children: <Widget>[
+                            Container(
+                              width: 48,
+                              padding: const EdgeInsets.symmetric(vertical: 5),
+                              decoration: BoxDecoration(
+                                color: LiveLuxuryPalette.mutedPill,
+                                borderRadius:
+                                    const BorderRadius.all(Radius.circular(8)),
+                                border: Border.all(
+                                  color: LiveLuxuryPalette.hairlineSubtle,
+                                  width: 0.5,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                opt.badge,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.4,
+                                  color: opt.id == '4K HDR'
+                                      ? LiveLuxuryPalette.champagneSoft
+                                      : const Color(0xFFD0D0DA),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    opt.title,
+                                    style: LiveBroadcastType.style(
+                                      context,
+                                      size: 13.5,
+                                      weight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    opt.sub,
+                                    style: LiveBroadcastType.style(
+                                      context,
+                                      size: 11.5,
+                                      weight: FontWeight.w400,
+                                      color: LiveLuxuryPalette.silverSecondary,
+                                      tabular: true,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (selectedQuality == opt.id)
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: LiveLuxuryPalette.crimsonActiveRim,
+                                ),
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.check_rounded,
+                                  color: Colors.white,
+                                  size: 13,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
