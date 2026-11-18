@@ -1,4 +1,4 @@
-﻿import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
@@ -10,6 +10,10 @@ import '../widgets/hero_banner.dart';
 import '../widgets/title_row.dart';
 import 'live_tv_screen.dart';
 import 'search_screen.dart';
+
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+//  HomeScreen â€” Redesigned with AppColors/AppTextStyles tokens
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -67,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // â”€â”€â”€ Content â”€â”€â”€
         if (cols.isEmpty) ...[
-          // Empty state when no content is available
+          // â”€â”€â”€ Empty State â”€â”€â”€
           SliverToBoxAdapter(
             child: SizedBox(
               height: MediaQuery.of(context).size.height * 0.6,
@@ -80,22 +84,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFFE50914).withValues(alpha: 0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         border: Border.all(
-                          color: const Color(0xFFE50914).withValues(alpha: 0.2),
+                          color: AppColors.primary.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Icon(
                         Icons.movie_filter_rounded,
                         size: 40,
-                        color: const Color(0xFFE50914).withValues(alpha: 0.6),
+                        color: AppColors.primary.withValues(alpha: 0.6),
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Text(
-                      s.homeContentComingSoon,
-                      style: const TextStyle(
-                        color: Colors.white,
+                    const Text(
+                      '',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
                       ),
@@ -104,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       s.homeContentAdminPanel,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: AppColors.textPrimary.withValues(alpha: 0.5),
                         fontSize: 14,
                       ),
                     ),
@@ -139,8 +143,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   cols[i].id == 's-top10',
             ),
           ),
-
-          // Live channels and Networks removed per user request
         ],
 
         const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -213,10 +215,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Premium Components
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+//  Premium Components
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 
 /// Glassmorphism app bar icon button
 class _AppBarIcon extends StatelessWidget {
@@ -233,19 +234,19 @@ class _AppBarIcon extends StatelessWidget {
         padding: const EdgeInsets.all(9),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white.withValues(alpha: 0.07),
+          color: AppColors.textPrimary.withValues(alpha: 0.07),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: AppColors.textPrimary.withValues(alpha: 0.08),
             width: 0.5,
           ),
         ),
-        child: Icon(icon, size: 20, color: Colors.white),
+        child: Icon(icon, size: 20, color: AppColors.textPrimary),
       ),
     );
   }
 }
 
-/// Clean premium tab bar with sliding underline
+// â”€â”€â”€ Premium Tab Bar with animated glowing underline â”€â”€â”€
 class _PremiumTabBar extends StatelessWidget {
   final List<String> tabs;
   final int selectedIndex;
@@ -272,7 +273,7 @@ class _PremiumTabBar extends StatelessWidget {
                 bottom: 0,
                 child: Container(
                   height: 1,
-                  color: Colors.white.withValues(alpha: 0.06),
+                  color: AppColors.textPrimary.withValues(alpha: 0.06),
                 ),
               ),
               // Animated glowing underline
@@ -287,7 +288,7 @@ class _PremiumTabBar extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(2),
                     gradient: const LinearGradient(
-                      colors: [Color(0xFFFF1A2D), Color(0xFFE50914)],
+                      colors: [Color(0xFFFF1A2D), AppColors.primary],
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -312,8 +313,8 @@ class _PremiumTabBar extends StatelessWidget {
                             duration: const Duration(milliseconds: 200),
                             style: TextStyle(
                               color: selectedIndex == i
-                                  ? Colors.white
-                                  : Colors.white.withValues(alpha: 0.4),
+                                  ? AppColors.textPrimary
+                                  : AppColors.textPrimary.withValues(alpha: 0.4),
                               fontWeight: selectedIndex == i
                                   ? FontWeight.w700
                                   : FontWeight.w500,
@@ -335,7 +336,7 @@ class _PremiumTabBar extends StatelessWidget {
   }
 }
 
-/// "Continue Watching" row with progress bars on landscape thumbnails
+// â”€â”€â”€ Continue Watching Row â”€â”€â”€
 class _ContinueWatchingRow extends StatelessWidget {
   final List<TitleItem> items;
   const _ContinueWatchingRow({required this.items});
@@ -366,7 +367,7 @@ class _ContinueWatchingRow extends StatelessWidget {
   }
 }
 
-/// Individual continue watching card with progress bar
+// â”€â”€â”€ Continue Watching Card â”€â”€â”€
 class _ContinueWatchingCard extends StatelessWidget {
   final TitleItem item;
   final double progress;
@@ -379,7 +380,6 @@ class _ContinueWatchingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Landscape thumbnail
           SizedBox(
             height: 112,
             child: ClipRRect(
@@ -418,13 +418,13 @@ class _ContinueWatchingCard extends StatelessWidget {
                         color: Colors.black.withValues(alpha: 0.5),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
+                          color: AppColors.textPrimary.withValues(alpha: 0.3),
                           width: 1.5,
                         ),
                       ),
                       child: const Icon(
                         Icons.play_arrow_rounded,
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         size: 24,
                       ),
                     ),
@@ -436,14 +436,14 @@ class _ContinueWatchingCard extends StatelessWidget {
                     bottom: 0,
                     child: Container(
                       height: 3,
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: AppColors.textPrimary.withValues(alpha: 0.15),
                       child: FractionallySizedBox(
                         alignment: AlignmentDirectional.centerStart,
                         widthFactor: progress,
                         child: Container(
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Color(0xFFFF1A2D), Color(0xFFE50914)],
+                              colors: [Color(0xFFFF1A2D), AppColors.primary],
                             ),
                           ),
                         ),
@@ -455,13 +455,12 @@ class _ContinueWatchingCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          // Title
           Text(
             item.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: Colors.white,
+              color: AppColors.textPrimary,
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
             ),
@@ -472,7 +471,7 @@ class _ContinueWatchingCard extends StatelessWidget {
   }
 }
 
-/// Premium section header with glowing red accent bar
+// â”€â”€â”€ Section Header with glowing red accent bar â”€â”€â”€
 class _SectionHeader extends StatelessWidget {
   final String title;
   final VoidCallback? onSeeAll;
@@ -507,7 +506,7 @@ class _SectionHeader extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 letterSpacing: 0.2,
               ),
             ),
@@ -544,17 +543,17 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-/// Networks strip with premium Studio Tiles
+// â”€â”€â”€ Networks Strip with Studio Tiles â”€â”€â”€
 class _NetworksStrip extends StatelessWidget {
   const _NetworksStrip();
 
   static const _gradients = [
-    [Color(0xFFE50914), Color(0xFF8B0000)], // Netflix red
-    [Color(0xFF003366), Color(0xFF001133)], // Deep blue
-    [Color(0xFF4A00E0), Color(0xFF8E2DE2)], // Purple
-    [Color(0xFF004D40), Color(0xFF00251A)], // Teal
-    [Color(0xFFE65100), Color(0xFFBF360C)], // Orange
-    [Color(0xFF1B5E20), Color(0xFF0A300D)], // Forest
+    [Color(0xFFE50914), Color(0xFF8B0000)],
+    [Color(0xFF003366), Color(0xFF001133)],
+    [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
+    [Color(0xFF004D40), Color(0xFF00251A)],
+    [Color(0xFFE65100), Color(0xFFBF360C)],
+    [Color(0xFF1B5E20), Color(0xFF0A300D)],
   ];
 
   @override
@@ -573,7 +572,7 @@ class _NetworksStrip extends StatelessWidget {
             itemBuilder: (_, i) {
               final colors = _gradients[i % _gradients.length];
               final initials = networks[i].substring(0, 1).toUpperCase();
-              
+
               return _StudioTile(
                 name: networks[i],
                 initials: initials,
@@ -596,12 +595,13 @@ class _NetworksStrip extends StatelessWidget {
   }
 }
 
+// â”€â”€â”€ Studio Tile â”€â”€â”€
 class _StudioTile extends StatefulWidget {
   final String name;
   final String initials;
   final List<Color> colors;
   final VoidCallback onTap;
-  
+
   const _StudioTile({
     required this.name,
     required this.initials,
@@ -636,7 +636,7 @@ class _StudioTileState extends State<_StudioTile> {
               end: Alignment.bottomRight,
             ),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: AppColors.glassSurface,
               width: 0.5,
             ),
             boxShadow: [
@@ -651,7 +651,7 @@ class _StudioTileState extends State<_StudioTile> {
             borderRadius: BorderRadius.circular(16),
             child: Stack(
               children: [
-                // Huge watermark initial for a studio feel
+                // Huge watermark initial
                 Positioned(
                   right: -10,
                   bottom: -20,
@@ -660,7 +660,7 @@ class _StudioTileState extends State<_StudioTile> {
                     style: TextStyle(
                       fontSize: 80,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: AppColors.textPrimary.withValues(alpha: 0.08),
                       height: 1.0,
                     ),
                   ),
@@ -673,7 +673,7 @@ class _StudioTileState extends State<_StudioTile> {
                         begin: const Alignment(-1.0, -1.0),
                         end: const Alignment(1.0, 1.0),
                         colors: [
-                          Colors.white.withValues(alpha: 0.2),
+                          AppColors.textPrimary.withValues(alpha: 0.2),
                           Colors.transparent,
                           Colors.transparent,
                           Colors.black.withValues(alpha: 0.3),
@@ -689,7 +689,7 @@ class _StudioTileState extends State<_StudioTile> {
                     widget.name,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.5,
@@ -708,13 +708,9 @@ class _StudioTileState extends State<_StudioTile> {
   }
 }
 
-/// Top Live Channels row with Pulsing indicator
+// â”€â”€â”€ Top Live Channels Row â”€â”€â”€
 class _TopLiveChannelsRow extends StatelessWidget {
   const _TopLiveChannelsRow();
-
-  static const _channelColors = [
-    Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364) // Sleek dark slate
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -746,6 +742,7 @@ class _TopLiveChannelsRow extends StatelessWidget {
   }
 }
 
+// â”€â”€â”€ Live Channel Card with pulsing LIVE badge â”€â”€â”€
 class _LiveChannelCard extends StatefulWidget {
   final int index;
   const _LiveChannelCard({required this.index});
@@ -760,7 +757,6 @@ class _LiveChannelCardState extends State<_LiveChannelCard> with SingleTickerPro
   @override
   void initState() {
     super.initState();
-    // Offset animations so they don't all pulse at the exact same millisecond
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -779,8 +775,7 @@ class _LiveChannelCardState extends State<_LiveChannelCard> with SingleTickerPro
   @override
   Widget build(BuildContext context) {
     final s = AppLocalizations.of(context);
-    
-    // Vary the accent color per channel slightly for a rich look
+
     final accents = [
       const Color(0xFF2196F3),
       const Color(0xFF9C27B0),
@@ -799,9 +794,9 @@ class _LiveChannelCardState extends State<_LiveChannelCard> with SingleTickerPro
         width: 175,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: const Color(0xFF141414), // Deep TV black
+          color: AppColors.surfaceCard,
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: AppColors.glassSurface,
             width: 1,
           ),
           boxShadow: [
@@ -816,7 +811,7 @@ class _LiveChannelCardState extends State<_LiveChannelCard> with SingleTickerPro
           borderRadius: BorderRadius.circular(16),
           child: Stack(
             children: [
-              // Subtle colored glow at the top mimicking screen light
+              // Subtle colored glow at the top
               Positioned(
                 top: -30,
                 left: -30,
@@ -830,12 +825,12 @@ class _LiveChannelCardState extends State<_LiveChannelCard> with SingleTickerPro
                         color: accent.withValues(alpha: 0.4),
                         blurRadius: 40,
                         spreadRadius: 10,
-                      )
+                      ),
                     ],
                   ),
                 ),
               ),
-              
+
               // Content
               Padding(
                 padding: const EdgeInsets.all(14),
@@ -849,7 +844,7 @@ class _LiveChannelCardState extends State<_LiveChannelCard> with SingleTickerPro
                         color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.05),
+                          color: AppColors.textPrimary.withValues(alpha: 0.05),
                         ),
                       ),
                       child: Row(
@@ -862,12 +857,12 @@ class _LiveChannelCardState extends State<_LiveChannelCard> with SingleTickerPro
                                 width: 7,
                                 height: 7,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFF1A2D),
+                                  color: AppColors.primary,
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFFFF1A2D).withValues(alpha: 
-                                          0.3 + (_pulseCtrl.value * 0.7)),
+                                      color: AppColors.primary.withValues(
+                                          alpha: 0.3 + (_pulseCtrl.value * 0.7)),
                                       blurRadius: 4 + (_pulseCtrl.value * 6),
                                       spreadRadius: _pulseCtrl.value * 2,
                                     ),
@@ -880,7 +875,7 @@ class _LiveChannelCardState extends State<_LiveChannelCard> with SingleTickerPro
                           const Text(
                             'LIVE',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.textPrimary,
                               fontSize: 9.5,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 1.0,
@@ -893,7 +888,7 @@ class _LiveChannelCardState extends State<_LiveChannelCard> with SingleTickerPro
                     Text(
                       s.channelGenericName(widget.index + 1),
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.2,
@@ -905,7 +900,7 @@ class _LiveChannelCardState extends State<_LiveChannelCard> with SingleTickerPro
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: AppColors.textPrimary.withValues(alpha: 0.6),
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
