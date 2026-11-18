@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../data/mock_data.dart';
 import '../l10n/app_localizations.dart';
@@ -10,6 +11,10 @@ import '../util/i18n.dart';
 import '../widgets/title_row.dart';
 import 'player_screen.dart';
 import 'search_screen.dart';
+
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+//  DetailScreen â€” Redesigned with AppColors/AppTextStyles tokens
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 
 class DetailScreen extends StatefulWidget {
   final TitleItem title;
@@ -34,8 +39,9 @@ class _DetailScreenState extends State<DetailScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
+          // â”€â”€â”€ SliverAppBar: expandedHeight 380 (was 340) â”€â”€â”€
           SliverAppBar(
-            expandedHeight: 340,
+            expandedHeight: 380,
             pinned: true,
             backgroundColor: AppColors.background,
             leading: IconButton(
@@ -71,17 +77,18 @@ class _DetailScreenState extends State<DetailScreen> {
                     errorWidget: (_, __, ___) =>
                         Container(color: AppColors.surface),
                   ),
+                  // â”€â”€â”€ Gradient stops [0.35, 0.75, 1.0] â”€â”€â”€
                   Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Color(0x99000000),
+                          const Color(0x80000000),
                           AppColors.background,
                         ],
-                        stops: [0.3, 0.75, 1.0],
+                        stops: const [0.35, 0.75, 1.0],
                       ),
                     ),
                   ),
@@ -104,6 +111,7 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
             ),
           ),
+          // â”€â”€â”€ Meta Chips â”€â”€â”€
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
@@ -120,14 +128,25 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
           if (t.cast.isNotEmpty)
             SliverToBoxAdapter(child: _castSection(t)),
+          // â”€â”€â”€ Section Tabs with animated indicator â”€â”€â”€
           SliverToBoxAdapter(child: _sectionTabs(sections)),
-          SliverToBoxAdapter(child: _sectionBody(sections, t)),
+          // â”€â”€â”€ Tab content with AnimatedSwitcher â”€â”€â”€
+          SliverToBoxAdapter(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: KeyedSubtree(
+                key: ValueKey('section-$_section'),
+                child: _sectionBody(sections, t),
+              ),
+            ),
+          ),
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
         ],
       ),
     );
   }
 
+  // â”€â”€â”€ Header: Title with GoogleFonts.outfit() 28px w800 â”€â”€â”€
   Widget _header(BuildContext ctx, TitleItem t) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -136,10 +155,11 @@ class _DetailScreenState extends State<DetailScreen> {
         children: [
           Text(
             t.title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
+            style: GoogleFonts.outfit(
+              color: AppColors.textPrimary,
+              fontSize: 28,
               fontWeight: FontWeight.w800,
+              letterSpacing: -0.8,
             ),
           ),
           const SizedBox(height: 6),
@@ -148,7 +168,7 @@ class _DetailScreenState extends State<DetailScreen> {
               const Icon(Icons.star, color: AppColors.accent, size: 14),
               const SizedBox(width: 4),
               Text(
-                '${t.rating.toStringAsFixed(1)} • ${localizedKindLabel(ctx, t.kind)}',
+                '${t.rating.toStringAsFixed(1)} â€¢ ${localizedKindLabel(ctx, t.kind)}',
                 style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 12.5,
@@ -162,6 +182,7 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
+  // â”€â”€â”€ Action Bar with AnimatedSwitcher for icon transitions â”€â”€â”€
   Widget _actionBar(BuildContext ctx, TitleItem t) {
     return AnimatedBuilder(
       animation: userState,
@@ -326,6 +347,7 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
+  // â”€â”€â”€ Icon Action with AnimatedSwitcher for 300ms easeOutBack transitions â”€â”€â”€
   Widget _iconAction(
     IconData icon,
     String label,
@@ -340,11 +362,21 @@ class _DetailScreenState extends State<DetailScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color:
-                  highlight ? AppColors.primary : AppColors.textPrimary,
-              size: 22,
+            // â”€â”€â”€ Icon size 24 (was 22) + AnimatedSwitcher â”€â”€â”€
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              switchInCurve: Curves.easeOutBack,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, animation) {
+                return ScaleTransition(scale: animation, child: child);
+              },
+              child: Icon(
+                icon,
+                key: ValueKey(icon),
+                color:
+                    highlight ? AppColors.primary : AppColors.textPrimary,
+                size: 24,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -364,16 +396,17 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
+  // â”€â”€â”€ Meta Chip: padding h10v4, borderRadius 6, bg #FF1A1A1A, text 12px â”€â”€â”€
   Widget _metaChip(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceAlt,
-        borderRadius: BorderRadius.circular(4),
+        color: const Color(0xFF1A1A1A), // AppColors.surfaceAlt
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         text,
-        style: const TextStyle(color: AppColors.textSecondary, fontSize: 11.5),
+        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
       ),
     );
   }
@@ -405,6 +438,7 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
+  // â”€â”€â”€ Section Tabs with animated indicator â”€â”€â”€
   Widget _sectionTabs(List<String> sections) {
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(16, 22, 16, 0),
@@ -431,12 +465,18 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Container(
+                    // â”€â”€â”€ Animated indicator â”€â”€â”€
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOutCubic,
                       height: 3,
-                      width: 36,
-                      color: _section == i
-                          ? AppColors.primary
-                          : Colors.transparent,
+                      width: _section == i ? 36 : 0,
+                      decoration: BoxDecoration(
+                        color: _section == i
+                            ? AppColors.primary
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ],
                 ),
@@ -459,6 +499,7 @@ class _DetailScreenState extends State<DetailScreen> {
     return _moreLikeThis(t);
   }
 
+  // â”€â”€â”€ Episodes with updated specs â”€â”€â”€
   Widget _episodes(TitleItem t) {
     final season = t.seasons[_seasonIdx];
     return Padding(
@@ -466,6 +507,7 @@ class _DetailScreenState extends State<DetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // â”€â”€â”€ Season Selector: borderRadius:8 bg:#FF1A1A1A padding:h14v10 â”€â”€â”€
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: InkWell(
@@ -499,10 +541,10 @@ class _DetailScreenState extends State<DetailScreen> {
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
+                    horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceAlt,
-                  borderRadius: BorderRadius.circular(6),
+                  color: const Color(0xFF1A1A1A), // AppColors.surfaceAlt
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
@@ -515,9 +557,10 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                     ),
                     const SizedBox(width: 4),
+                    // â”€â”€â”€ Chevron: 20px â”€â”€â”€
                     const Icon(
                       Icons.keyboard_arrow_down,
-                      size: 18,
+                      size: 20,
                       color: AppColors.textSecondary,
                     ),
                   ],
@@ -526,6 +569,7 @@ class _DetailScreenState extends State<DetailScreen> {
             ),
           ),
           const SizedBox(height: 8),
+          // â”€â”€â”€ Episode Rows â”€â”€â”€
           ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             shrinkWrap: true,
@@ -537,31 +581,33 @@ class _DetailScreenState extends State<DetailScreen> {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // â”€â”€â”€ Thumbnail: 130x73 borderRadius:8 â”€â”€â”€
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         CachedNetworkImage(
                           imageUrl: ep.still,
-                          width: 120,
-                          height: 68,
+                          width: 130,
+                          height: 73,
                           fit: BoxFit.cover,
                           placeholder: (_, __) => Container(
-                            width: 120,
-                            height: 68,
+                            width: 130,
+                            height: 73,
                             color: AppColors.surfaceAlt,
                           ),
                           errorWidget: (_, __, ___) => Container(
-                            width: 120,
-                            height: 68,
+                            width: 130,
+                            height: 73,
                             color: AppColors.surfaceAlt,
                           ),
                         ),
+                        // â”€â”€â”€ Play icon: 32px â”€â”€â”€
                         const Icon(
                           Icons.play_circle_fill,
                           color: Colors.white70,
-                          size: 30,
+                          size: 32,
                         ),
                       ],
                     ),
@@ -571,6 +617,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // â”€â”€â”€ Title: 14px w700 â”€â”€â”€
                         Text(
                           '${ep.number}. ${ep.title}',
                           style: const TextStyle(
@@ -587,13 +634,14 @@ class _DetailScreenState extends State<DetailScreen> {
                           ),
                         ),
                         const SizedBox(height: 6),
+                        // â”€â”€â”€ Description: 13px maxLines:3 â”€â”€â”€
                         Text(
                           ep.description,
-                          maxLines: 2,
+                          maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: AppColors.textSecondary,
-                            fontSize: 12.5,
+                            fontSize: 13,
                             height: 1.35,
                           ),
                         ),
@@ -678,6 +726,4 @@ class _DetailScreenState extends State<DetailScreen> {
       ),
     );
   }
-
-
 }
