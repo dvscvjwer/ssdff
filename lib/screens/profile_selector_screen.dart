@@ -1,3 +1,7 @@
+// ─────────────────────────────────────────────────────────────
+//  profile_selector_screen.dart — SkyLive Redesign
+// ─────────────────────────────────────────────────────────────
+
 import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
@@ -5,6 +9,7 @@ import '../l10n/app_localizations.dart';
 import '../models/title.dart';
 import '../theme/app_theme.dart';
 
+// ─── Screen ──────────────────────────────────────────────────
 class ProfileSelectorScreen extends StatelessWidget {
   const ProfileSelectorScreen({super.key});
 
@@ -55,78 +60,97 @@ class ProfileSelectorScreen extends StatelessWidget {
             fontWeight: FontWeight.w800,
             fontSize: 19,
             letterSpacing: 0.2,
+            color: AppColors.textPrimary,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.close, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(20, 6, 20, 14),
-              child: Text(
-                s.meWhosWatchingHint,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.background,
+              Color(0xFF0F0F0F),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 4),
+              Padding(
+                padding:
+                    const EdgeInsetsDirectional.fromSTEB(20, 6, 20, 14),
+                child: Text(
+                  s.meWhosWatchingHint,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 22,
-                  childAspectRatio: 0.74,
-                ),
-                itemCount: profiles.length + 1,
-                itemBuilder: (_, i) {
-                  if (i == profiles.length) {
-                    return _AddTile(
-                      onTap: () =>
-                          ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          behavior: SnackBarBehavior.floating,
-                          duration: const Duration(seconds: 2),
-                          content: Text(s.snackComingSoon),
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 22,
+                    childAspectRatio: 0.74,
+                  ),
+                  itemCount: profiles.length + 1,
+                  itemBuilder: (_, i) {
+                    if (i == profiles.length) {
+                      return _AddTile(
+                        onTap: () =>
+                            ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                            content: Text(s.snackComingSoon),
+                          ),
                         ),
-                      ),
+                      );
+                    }
+                    final p = profiles[i];
+                    return _ProfileTile(
+                      profile: p,
+                      gradient: _gradients[i % _gradients.length],
+                      icon: _icons[i % _icons.length],
+                      isSelected: i == 0,
+                      onTap: () => Navigator.pop(context, p.id),
                     );
-                  }
-                  final p = profiles[i];
-                  return _ProfileTile(
-                    profile: p,
-                    gradient: _gradients[i % _gradients.length],
-                    icon: _icons[i % _icons.length],
-                    onTap: () => Navigator.pop(context, p.id),
-                  );
-                },
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
+// ─── Profile Tile ────────────────────────────────────────────
 class _ProfileTile extends StatelessWidget {
   final Profile profile;
   final List<Color> gradient;
   final IconData icon;
+  final bool isSelected;
   final VoidCallback onTap;
 
   const _ProfileTile({
     required this.profile,
     required this.gradient,
     required this.icon,
+    required this.isSelected,
     required this.onTap,
   });
 
@@ -148,12 +172,21 @@ class _ProfileTile extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
+                border: isSelected
+                    ? Border.all(color: AppColors.primary, width: 2.5)
+                    : null,
                 boxShadow: [
                   BoxShadow(
                     color: gradient.first.withValues(alpha: 0.35),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
+                  if (isSelected)
+                    BoxShadow(
+                      color: AppColors.glowRed,
+                      blurRadius: 24,
+                      spreadRadius: 2,
+                    ),
                 ],
               ),
               child: Stack(
@@ -163,7 +196,7 @@ class _ProfileTile extends StatelessWidget {
                     right: 8,
                     child: Icon(
                       icon,
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: AppColors.textPrimary.withValues(alpha: 0.5),
                       size: 22,
                     ),
                   ),
@@ -171,7 +204,7 @@ class _ProfileTile extends StatelessWidget {
                     child: Text(
                       profile.avatar,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontSize: 38,
                         fontWeight: FontWeight.w900,
                         height: 1,
@@ -190,6 +223,7 @@ class _ProfileTile extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13.5,
               fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
             ),
           ),
           if (profile.kid)
@@ -217,6 +251,7 @@ class _ProfileTile extends StatelessWidget {
   }
 }
 
+// ─── Add Tile ────────────────────────────────────────────────
 class _AddTile extends StatelessWidget {
   final VoidCallback onTap;
   const _AddTile({required this.onTap});
