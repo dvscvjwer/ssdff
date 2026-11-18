@@ -1,16 +1,19 @@
 import 'dart:async';
-import 'dart:ui';
+import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
+import '../widgets/live_broadcast_widgets.dart';
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-//  LiveTvScreen â€” Redesigned with AppColors tokens + pulsing LIVE
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ─────────────────────────────────────────────────────────────────────────────
+//  LiveTvScreen v3.0 — World-Class Responsive Split-View & Broadcast Player
+// ─────────────────────────────────────────────────────────────────────────────
 
 class LiveTvScreen extends StatefulWidget {
   const LiveTvScreen({super.key});
@@ -20,893 +23,469 @@ class LiveTvScreen extends StatefulWidget {
 }
 
 class _LiveTvScreenState extends State<LiveTvScreen>
-    with SingleTickerProviderStateMixin {
-  int _selectedCategoryIndex = 0;
-  int _selectedChannelIndex = 0;
+    with TickerProviderStateMixin {
+  static const String _prefsFavoritesKey = 'skylive_live_favorites_v3';
 
+  LiveChannel _activeChannel = LiveBroadcastCatalog.channels.first;
+  LiveCategory _selectedCategory = LiveCategory.all;
+  String _searchQuery = '';
+  int _mobileTabIndex = 0;
+  String _selectedQuality = 'Auto';
+  bool _fillScreen = true;
+
+  final Set<String> _favoriteIds = <String>{
+    'bein_1_premium',
+    'sky_sports_pl',
+    'hbo_max_live',
+  };
+  final Set<String> _remindedSlotIds = <String>{};
+
+  // Video & Browser-Safe Autoplay State
   VideoPlayerController? _videoController;
+  int _loadGeneration = 0;
   bool _isVideoInitialized = false;
+  bool _isLoadingStream = true;
+  bool _hasStreamError = false;
+  bool _isPlaying = true;
+  bool _isMuted = true;
+  bool _userUnmutedSession = false;
+  double _volume = 1.0;
 
-  // â”€â”€â”€ Pulsing LIVE badge animation â”€â”€â”€
-  late final AnimationController _livePulseCtrl;
+  // HUD, OSD & Live Clock State
+  bool _showHud = true;
+  bool _showOsdBanner = false;
+  DateTime _now = DateTime.now();
+  double _viewerDeltaK = 0.0;
+
+  late final AnimationController _studioAnimCtrl;
+  late final AnimationController _pulseAnimCtrl;
+  late final AnimationController _eqAnimCtrl;
+  late final TextEditingController _searchCtrl;
+  late final ValueNotifier<int> _playerSyncTick;
+
+  Timer? _clockTimer;
+  Timer? _hudHideTimer;
+  Timer? _osdTimer;
 
   @override
   void initState() {
     super.initState();
-    _livePulseCtrl = AnimationController(
+    _playerSyncTick = ValueNotifier<int>(0);
+    _studioAnimCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(seconds: 6),
+    )..repeat();
+    _pulseAnimCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
-    _initializeVideoPlayer(_currentChannel.videoUrl);
-  }
+    _eqAnimCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+    _searchCtrl = TextEditingController();
 
-  _Channel get _currentChannel {
-    return _MockEpgData
-        .categories[_selectedCategoryIndex].channels[_selectedChannelIndex];
-  }
+    _restoreFavorites();
+    _loadChannel(_activeChannel, showOsd: false);
 
-  void _initializeVideoPlayer(String url) async {
-    final oldController = _videoController;
-    if (oldController != null) {
-      oldController.pause();
-      oldController.dispose();
-    }
-
-    setState(() {
-      _isVideoInitialized = false;
+    _clockTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _now = DateTime.now();
+        final double wave = math.sin(_now.second * 0.45);
+        _viewerDeltaK = double.parse((wave * 0.6).toStringAsFixed(1));
+      });
+      _notifyPlayerSync();
     });
+  }
 
+  void _notifyPlayerSync() {
+    _playerSyncTick.value = _playerSyncTick.value + 1;
+  }
+
+  Future<void> _restoreFavorites() async {
     try {
-      _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
-      await _videoController!.initialize();
-      _videoController!.setLooping(true);
-      _videoController!.setVolume(1.0);
-      _videoController!.play();
-
-      if (mounted) {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      if (!mounted) {
+        return;
+      }
+      final List<String>? saved = prefs.getStringList(_prefsFavoritesKey);
+      if (saved != null) {
         setState(() {
-          _isVideoInitialized = true;
+          _favoriteIds
+            ..clear()
+            ..addAll(saved);
         });
       }
-    } catch (e) {
-      debugPrint("Error initializing video: $e");
+    } catch (_) {
+      // Fallback to in-memory defaults silently.
     }
   }
 
-  void _onCategorySelected(int index) {
-    if (_selectedCategoryIndex == index) return;
-    HapticFeedback.lightImpact();
+  Future<void> _toggleFavorite(LiveChannel channel) async {
+    unawaited(HapticFeedback.lightImpact());
     setState(() {
-      _selectedCategoryIndex = index;
-      _selectedChannelIndex = 0;
+      if (_favoriteIds.contains(channel.id)) {
+        _favoriteIds.remove(channel.id);
+      } else {
+        _favoriteIds.add(channel.id);
+      }
     });
-    _initializeVideoPlayer(_currentChannel.videoUrl);
+    _notifyPlayerSync();
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_prefsFavoritesKey, _favoriteIds.toList());
+    } catch (_) {
+      // Ignore storage write issues in restricted web incognito sessions.
+    }
   }
 
-  void _onChannelSelected(int index) {
-    if (_selectedChannelIndex == index) return;
-    HapticFeedback.lightImpact();
+  void _toggleSlotReminder(EpgSlot slot) {
+    unawaited(HapticFeedback.selectionClick());
+    final bool ar = LiveBroadcastType.isAr(context);
+    final bool added;
     setState(() {
-      _selectedChannelIndex = index;
+      if (_remindedSlotIds.contains(slot.id)) {
+        _remindedSlotIds.remove(slot.id);
+        added = false;
+      } else {
+        _remindedSlotIds.add(slot.id);
+        added = true;
+      }
     });
-    _initializeVideoPlayer(_currentChannel.videoUrl);
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 2),
+          content: Text(
+            added
+                ? (ar
+                    ? 'تم تفعيل التذكير لبرنامج: ${slot.title(true)}'
+                    : 'Reminder set for: ${slot.title(false)}')
+                : (ar ? 'تم إلغاء التذكير' : 'Reminder cancelled'),
+            style: LiveBroadcastType.style(context, size: 13),
+          ),
+        ),
+      );
+  }
+
+  void _scheduleHudAutoHide() {
+    _hudHideTimer?.cancel();
+    if (!_isPlaying) {
+      return;
+    }
+    _hudHideTimer = Timer(const Duration(milliseconds: 3500), () {
+      if (!mounted || !_isPlaying) {
+        return;
+      }
+      setState(() => _showHud = false);
+      _notifyPlayerSync();
+    });
+  }
+
+  void _revealHudTemporarily() {
+    if (!_showHud) {
+      setState(() => _showHud = true);
+      _notifyPlayerSync();
+    }
+    _scheduleHudAutoHide();
+  }
+
+  void _toggleHudVisibility() {
+    setState(() => _showHud = !_showHud);
+    _notifyPlayerSync();
+    if (_showHud) {
+      _scheduleHudAutoHide();
+    } else {
+      _hudHideTimer?.cancel();
+    }
+  }
+
+  Future<void> _loadChannel(
+    LiveChannel channel, {
+    bool showOsd = true,
+    bool useFallbackUrl = false,
+  }) async {
+    final int gen = ++_loadGeneration;
+    final VideoPlayerController? previous = _videoController;
+    _videoController = null;
+
+    if (mounted) {
+      setState(() {
+        _activeChannel = channel;
+        _isVideoInitialized = false;
+        _isLoadingStream = true;
+        _hasStreamError = false;
+        _showHud = true;
+        if (showOsd) {
+          _showOsdBanner = true;
+        }
+      });
+      _notifyPlayerSync();
+    }
+
+    if (showOsd) {
+      _osdTimer?.cancel();
+      _osdTimer = Timer(const Duration(milliseconds: 2600), () {
+        if (!mounted) {
+          return;
+        }
+        setState(() => _showOsdBanner = false);
+        _notifyPlayerSync();
+      });
+    }
+
+    if (previous != null) {
+      unawaited(previous.dispose());
+    }
+
+    final String targetUrl = useFallbackUrl
+        ? LiveBroadcastCatalog.fallbackStreamUrl
+        : channel.streamUrl;
+    final VideoPlayerController controller =
+        VideoPlayerController.networkUrl(Uri.parse(targetUrl));
+
+    try {
+      await controller.initialize().timeout(const Duration(seconds: 12));
+      if (!mounted || gen != _loadGeneration) {
+        await controller.dispose();
+        return;
+      }
+
+      await controller.setLooping(true);
+
+      if (!useFallbackUrl && channel.initialSeekSeconds > 0) {
+        final int totalSec = controller.value.duration.inSeconds;
+        if (totalSec > channel.initialSeekSeconds + 2) {
+          await controller.seekTo(
+            Duration(seconds: channel.initialSeekSeconds),
+          );
+        }
+      }
+
+      if (!mounted || gen != _loadGeneration) {
+        await controller.dispose();
+        return;
+      }
+
+      bool startMuted = !_userUnmutedSession || _isMuted;
+      if (!startMuted) {
+        try {
+          await controller.setVolume(_volume.clamp(0.0, 1.0));
+          await controller.play();
+        } catch (_) {
+          startMuted = true;
+        }
+      }
+
+      if (startMuted) {
+        await controller.setVolume(0.0);
+        await controller.play();
+      }
+
+      if (!mounted || gen != _loadGeneration) {
+        await controller.dispose();
+        return;
+      }
+
+      _videoController = controller;
+      setState(() {
+        _isMuted = startMuted;
+        _isPlaying = true;
+        _isVideoInitialized = true;
+        _isLoadingStream = false;
+        _hasStreamError = false;
+      });
+      _notifyPlayerSync();
+      _scheduleHudAutoHide();
+    } catch (_) {
+      await controller.dispose();
+      if (!mounted || gen != _loadGeneration) {
+        return;
+      }
+      if (!useFallbackUrl) {
+        await _loadChannel(channel, showOsd: false, useFallbackUrl: true);
+        return;
+      }
+      setState(() {
+        _isLoadingStream = false;
+        _hasStreamError = true;
+        _isVideoInitialized = false;
+      });
+      _notifyPlayerSync();
+    }
+  }
+
+  Future<void> _unmuteFromPill() async {
+    unawaited(HapticFeedback.lightImpact());
+    final VideoPlayerController? ctrl = _videoController;
+    _userUnmutedSession = true;
+    final double targetVol = _volume <= 0.05 ? 1.0 : _volume;
+    if (ctrl != null && _isVideoInitialized) {
+      await ctrl.setVolume(targetVol);
+      if (!ctrl.value.isPlaying) {
+        await ctrl.play();
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _volume = targetVol;
+      _isMuted = false;
+      _isPlaying = true;
+    });
+    _notifyPlayerSync();
+    _revealHudTemporarily();
+  }
+
+  Future<void> _toggleMute() async {
+    unawaited(HapticFeedback.selectionClick());
+    if (_isMuted) {
+      await _unmuteFromPill();
+      return;
+    }
+    final VideoPlayerController? ctrl = _videoController;
+    if (ctrl != null && _isVideoInitialized) {
+      await ctrl.setVolume(0.0);
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() => _isMuted = true);
+    _notifyPlayerSync();
+    _revealHudTemporarily();
+  }
+
+  Future<void> _setVolumeLevel(double value) async {
+    final double clamped = value.clamp(0.0, 1.0);
+    final VideoPlayerController? ctrl = _videoController;
+    _userUnmutedSession = clamped > 0.01;
+    if (ctrl != null && _isVideoInitialized) {
+      await ctrl.setVolume(clamped);
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _volume = clamped;
+      _isMuted = clamped <= 0.01;
+    });
+    _notifyPlayerSync();
+    _revealHudTemporarily();
+  }
+
+  Future<void> _togglePlayPause() async {
+    unawaited(HapticFeedback.selectionClick());
+    final VideoPlayerController? ctrl = _videoController;
+    if (ctrl == null || !_isVideoInitialized) {
+      return;
+    }
+    if (ctrl.value.isPlaying) {
+      await ctrl.pause();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isPlaying = false;
+        _showHud = true;
+      });
+      _hudHideTimer?.cancel();
+    } else {
+      await ctrl.play();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _isPlaying = true);
+      _scheduleHudAutoHide();
+    }
+    _notifyPlayerSync();
+  }
+
+  Future<void> _jumpToLiveEdge() async {
+    unawaited(HapticFeedback.lightImpact());
+    final VideoPlayerController? ctrl = _videoController;
+    if (ctrl != null && _isVideoInitialized) {
+      final int seekTarget = _activeChannel.initialSeekSeconds;
+      if (ctrl.value.duration.inSeconds > seekTarget + 1) {
+        await ctrl.seekTo(Duration(seconds: seekTarget));
+      }
+      if (!ctrl.value.isPlaying) {
+        await ctrl.play();
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() => _isPlaying = true);
+    _notifyPlayerSync();
+    _revealHudTemporarily();
+  }
+
+  void _stepChannel(int delta) {
+    unawaited(HapticFeedback.selectionClick());
+    const List<LiveChannel> all = LiveBroadcastCatalog.channels;
+    final int currentIdx =
+        all.indexWhere((LiveChannel c) => c.id == _activeChannel.id);
+    final int nextIdx =
+        ((currentIdx < 0 ? 0 : currentIdx) + delta + all.length) % all.length;
+    _loadChannel(all[nextIdx]);
+  }
+
+  List<LiveChannel> get _filteredChannels {
+    final String q = _searchQuery.trim().toLowerCase();
+    return LiveBroadcastCatalog.channels.where((LiveChannel ch) {
+      if (_selectedCategory == LiveCategory.favorites &&
+          !_favoriteIds.contains(ch.id)) {
+        return false;
+      }
+      if (_selectedCategory != LiveCategory.all &&
+          _selectedCategory != LiveCategory.favorites &&
+          ch.category != _selectedCategory) {
+        return false;
+      }
+      if (q.isEmpty) {
+        return true;
+      }
+      final EpgSlot currentSlot = ch.buildSchedule(_now).first;
+      final bool matchesName = ch.nameAr.toLowerCase().contains(q) ||
+          ch.nameEn.toLowerCase().contains(q) ||
+          ch.number.contains(q);
+      final bool matchesProgram =
+          currentSlot.titleAr.toLowerCase().contains(q) ||
+              currentSlot.titleEn.toLowerCase().contains(q);
+      final bool matchesMatch = ch.liveMatch != null &&
+          (ch.liveMatch!.homeTeamAr.toLowerCase().contains(q) ||
+              ch.liveMatch!.homeTeamEn.toLowerCase().contains(q) ||
+              ch.liveMatch!.awayTeamAr.toLowerCase().contains(q) ||
+              ch.liveMatch!.awayTeamEn.toLowerCase().contains(q) ||
+              ch.liveMatch!.competitionAr.toLowerCase().contains(q) ||
+              ch.liveMatch!.competitionEn.toLowerCase().contains(q));
+      return matchesName || matchesProgram || matchesMatch;
+    }).toList();
+  }
+
+  String get _formattedViewers {
+    final double val =
+        (_activeChannel.baseViewersK + _viewerDeltaK).clamp(1.0, 999.9);
+    return '${val.toStringAsFixed(1)}K';
   }
 
   @override
   void dispose() {
-    _livePulseCtrl.dispose();
+    _loadGeneration++;
+    _clockTimer?.cancel();
+    _hudHideTimer?.cancel();
+    _osdTimer?.cancel();
+    _studioAnimCtrl.dispose();
+    _pulseAnimCtrl.dispose();
+    _eqAnimCtrl.dispose();
+    _searchCtrl.dispose();
+    _playerSyncTick.dispose();
     _videoController?.dispose();
     super.dispose();
   }
-
-  @override
-  Widget build(BuildContext context) {
-    final featuredChannel = _currentChannel;
-    final screenPadding = MediaQuery.of(context).padding;
-    final currentCategory = _MockEpgData.categories[_selectedCategoryIndex];
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          // â”€â”€â”€ Ambient Glow â”€â”€â”€
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 800),
-            top: 100,
-            left: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.15),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 800),
-            top: 300,
-            right: -100,
-            child: Container(
-              width: 400,
-              height: 400,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.primaryLight.withValues(alpha: 0.1),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              // â”€â”€â”€ Edge-to-Edge Video Player â”€â”€â”€
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.only(top: screenPadding.top),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Container(
-                      color: Colors.black,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          if (_isVideoInitialized && _videoController != null)
-                            AnimatedOpacity(
-                              opacity: 1.0,
-                              duration: const Duration(milliseconds: 500),
-                              child: VideoPlayer(_videoController!),
-                            )
-                          else
-                            Center(
-                              child: CircularProgressIndicator(
-                                color: AppColors.primary,
-                                strokeWidth: 2,
-                              ),
-                            ),
-
-                          // Smooth gradient fade
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            height: 100,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                  colors: [
-                                    Colors.black.withValues(alpha: 1.0),
-                                    Colors.black.withValues(alpha: 0.0),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // â”€â”€â”€ LIVE Badge with pulsing animation â”€â”€â”€
-                          Positioned(
-                            top: 16,
-                            left: 16,
-                            child: AnimatedBuilder(
-                              animation: _livePulseCtrl,
-                              builder: (context, child) {
-                                final opacity =
-                                    0.85 + (_livePulseCtrl.value * 0.15);
-                                return Opacity(
-                                  opacity: opacity,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 5),
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFFE50914), // AppColors.primary
-                                          Color(0xFFFF3B30), // AppColors.primaryLight
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(8),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: AppColors.primary
-                                              .withValues(alpha: 0.4),
-                                          blurRadius: 12,
-                                          spreadRadius: 1,
-                                        ),
-                                      ],
-                                    ),
-                                    child: Text(
-                                      'LIVE',
-                                      style: GoogleFonts.inter(
-                                        color: AppColors.textPrimary,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: 1.2,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-
-                          // Fullscreen Button
-                          Positioned(
-                            bottom: 12,
-                            right: 12,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: BackdropFilter(
-                                filter:
-                                    ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                                child: Container(
-                                  color: Colors.black.withValues(alpha: 0.4),
-                                  child: IconButton(
-                                    icon: const Icon(Icons.fullscreen,
-                                        color: AppColors.textPrimary, size: 24),
-                                    onPressed: () {
-                                      if (_videoController != null) {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                _LiveFullscreenPlayer(
-                                              controller: _videoController!,
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              // â”€â”€â”€ Channel Header â”€â”€â”€
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  child: Row(
-                    children: [
-                      // â”€â”€â”€ Logo: 56x56 borderRadius:14 â”€â”€â”€
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF111111), // AppColors.surface
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                              color: const Color(0x1AFFFFFF)), // glassSurface
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.15),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: CachedNetworkImage(
-                            imageUrl: featuredChannel.logo,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 300),
-                              child: Text(
-                                featuredChannel.name,
-                                key: ValueKey(featuredChannel.name),
-                                style: GoogleFonts.inter(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: -0.5,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 300),
-                              child: Text(
-                                featuredChannel.nowPlaying,
-                                key: ValueKey(featuredChannel.nowPlaying),
-                                style: GoogleFonts.inter(
-                                  color: AppColors.primaryLight,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // ─── EPG Guide Strip (Now Playing + Up Next) ───
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceCard,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.glassSurface,
-                        width: 0.5,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0x1AFFFFFF),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'NOW • 20:00 - 22:00',
-                                style: TextStyle(
-                                  color: AppColors.accentCyan,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                featuredChannel.nowPlaying,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(2),
-                          child: const LinearProgressIndicator(
-                            value: 0.62,
-                            minHeight: 2,
-                            color: AppColors.primary,
-                            backgroundColor: Color(0xFF222222),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0x1AFFFFFF),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'UP NEXT • 22:00',
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${featuredChannel.name} Prime Highlights',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 8)),
-
-              // â”€â”€â”€ Section Title (Channels) â”€â”€â”€
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Up Next',
-                        style: GoogleFonts.inter(
-                          color: AppColors.textPrimary,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 8)),
-
-              // â”€â”€â”€ Channel Cards: 72x72 width:100 borderRadius:16 â”€â”€â”€
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 80,
-                  child: ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: currentCategory.channels.length,
-                    itemBuilder: (context, index) {
-                      final channel = currentCategory.channels[index];
-                      final isSelected = index == _selectedChannelIndex;
-
-                      return GestureDetector(
-                        onTap: () => _onChannelSelected(index),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOutCubic,
-                          margin: const EdgeInsets.only(right: 12),
-                          width: 100,
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primary.withValues(alpha: 0.15)
-                                : const Color(0x0DFFFFFF),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primary.withValues(alpha: 0.5)
-                                  : Colors.transparent,
-                              width: 1.5,
-                            ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.primary
-                                          .withValues(alpha: 0.2),
-                                      blurRadius: 15,
-                                      offset: const Offset(0, 5),
-                                    ),
-                                  ]
-                                : [],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: BackdropFilter(
-                              // â”€â”€â”€ Backdrop blur: sigma 12 (was 15) â”€â”€â”€
-                              filter:
-                                  ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                              child: Center(
-                                child: AnimatedScale(
-                                  scale: isSelected ? 1.05 : 0.95,
-                                  duration: const Duration(milliseconds: 300),
-                                  child: SizedBox(
-                                    width: 50,
-                                    height: 50,
-                                    child: CachedNetworkImage(
-                                      imageUrl: channel.logo,
-                                      fit: BoxFit.contain,
-                                      color: isSelected
-                                          ? AppColors.textPrimary
-                                          : AppColors.textPrimary
-                                              .withValues(alpha: 0.5),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-              // â”€â”€â”€ Section Title (Categories) â”€â”€â”€
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Categories',
-                        style: GoogleFonts.inter(
-                          color: AppColors.textPrimary,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 8)),
-
-              // â”€â”€â”€ Category Tiles â”€â”€â”€
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final category = _MockEpgData.categories[index];
-                      final isSelected = index == _selectedCategoryIndex;
-
-                      return _MinimalistCategoryTile(
-                        category: category,
-                        isSelected: isSelected,
-                        onTap: () => _onCategorySelected(index),
-                      );
-                    },
-                    childCount: _MockEpgData.categories.length,
-                  ),
-                ),
-              ),
-
-              SliverToBoxAdapter(
-                child: SafeArea(
-                  top: false,
-                  child: const SizedBox(height: 60),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// â”€â”€â”€ Category Tile â”€â”€â”€
-class _MinimalistCategoryTile extends StatelessWidget {
-  final _Category category;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _MinimalistCategoryTile({
-    required this.category,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.1)
-              : AppColors.textPrimary.withValues(alpha: 0.03),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primary.withValues(alpha: 0.4)
-                : Colors.transparent,
-            width: 1.5,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: BackdropFilter(
-            // â”€â”€â”€ Backdrop blur: sigma 12 (was 15) â”€â”€â”€
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Padding(
-              padding: const EdgeInsets.all(14.0),
-              child: Row(
-                children: [
-                  // â”€â”€â”€ Icon: 18px, circle, padding:10 â”€â”€â”€
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primary.withValues(alpha: 0.2)
-                          : AppColors.textPrimary.withValues(alpha: 0.05),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.tv_rounded,
-                      color: isSelected
-                          ? AppColors.primary
-                          : Colors.white54,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // â”€â”€â”€ name: 16px â”€â”€â”€
-                        Text(
-                          category.name,
-                          style: GoogleFonts.inter(
-                            color: AppColors.textPrimary,
-                            fontSize: 16,
-                            fontWeight: isSelected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        // â”€â”€â”€ count: 12px â”€â”€â”€
-                        Text(
-                          '${category.channels.length} Channels',
-                          style: GoogleFonts.inter(
-                            color: isSelected
-                                ? AppColors.textPrimary
-                                    .withValues(alpha: 0.8)
-                                : AppColors.textPrimary
-                                    .withValues(alpha: 0.4),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isSelected)
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: AppColors.primary,
-                      size: 18,
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-//  Mock Data
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-
-class _Channel {
-  final String id;
-  final String name;
-  final String logo;
-  final String videoUrl;
-  final String nowPlaying;
-
-  _Channel({
-    required this.id,
-    required this.name,
-    required this.logo,
-    required this.videoUrl,
-    required this.nowPlaying,
-  });
-}
-
-class _Category {
-  final String id;
-  final String name;
-  final String logo;
-  final List<_Channel> channels;
-
-  _Category({
-    required this.id,
-    required this.name,
-    required this.logo,
-    required this.channels,
-  });
-}
-
-class _MockEpgData {
-  static final List<_Category> categories = [
-    _Category(
-      id: 'cat_sky',
-      name: 'Sky Sports',
-      logo:
-          'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/kodi.png',
-      channels: [
-        _Channel(
-          id: 'sky1',
-          name: 'Main Event',
-          logo:
-              'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/kodi.png',
-          videoUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
-          nowPlaying: 'Arsenal vs Chelsea',
-        ),
-        _Channel(
-          id: 'sky2',
-          name: 'Premier League',
-          logo:
-              'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/kodi.png',
-          videoUrl:
-              'https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8',
-          nowPlaying: 'Match Analysis',
-        ),
-      ],
-    ),
-    _Category(
-      id: 'cat_bein',
-      name: 'beIN Sports',
-      logo:
-          'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/twitch.png',
-      channels: [
-        _Channel(
-          id: 'bein1',
-          name: 'beIN 1',
-          logo:
-              'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/twitch.png',
-          videoUrl:
-              'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
-          nowPlaying: 'UCL Final',
-        ),
-      ],
-    ),
-    _Category(
-      id: 'cat_hbo',
-      name: 'Cinema',
-      logo:
-          'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/hbo.png',
-      channels: [
-        _Channel(
-          id: 'hbo1',
-          name: 'HBO Max',
-          logo:
-              'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/hbo.png',
-          videoUrl:
-              'https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8',
-          nowPlaying: 'House of the Dragon',
-        ),
-      ],
-    ),
-  ];
-}
-
-// â”€â”€â”€ Fullscreen Player â”€â”€â”€
-class _LiveFullscreenPlayer extends StatefulWidget {
-  final VideoPlayerController controller;
-
-  const _LiveFullscreenPlayer({required this.controller});
-
-  @override
-  State<_LiveFullscreenPlayer> createState() => _LiveFullscreenPlayerState();
-}
-
-class _LiveFullscreenPlayerState extends State<_LiveFullscreenPlayer> {
-  @override
-  void initState() {
-    super.initState();
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
-  }
-
-  @override
-  void dispose() {
-    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Center(
-            child: AspectRatio(
-              aspectRatio: widget.controller.value.aspectRatio,
-              child: VideoPlayer(widget.controller),
-            ),
-          ),
-          SafeArea(
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Material(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  shape: const CircleBorder(),
-                  child: IconButton(
-                    icon: const Icon(Icons.close,
-                        color: AppColors.textPrimary, size: 28),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
